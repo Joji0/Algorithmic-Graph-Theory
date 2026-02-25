@@ -18,7 +18,7 @@ void dfs(int u, vector<vector<int>> &adj, vector<bool> &vis) {
         }
 }
 
-void solve() {
+int main() {
         int isDirected;
         cout << CYAN << "==================================================\n";
         cout << "             GRAPH ALGORITHMS EXPLORER            \n";
@@ -284,16 +284,4 @@ void solve() {
                         cout << RED << "[!] Invalid option. Please select a number between 1 and 4.\n" << RESET;
                 }
         }
-}
-
-int main() {
-        ios::sync_with_stdio(false);
-        cin.tie(NULL);
-
-        int tc = 1;
-        // cin >> tc;
-        while (tc--) {
-                solve();
-        }
-        return 0;
 }

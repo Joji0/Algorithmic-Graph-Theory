@@ -1,1 +1,9 @@
+build/
+.vscode/
+*.o
+*.obj
+*.out
+*.so
+*.dll
+*.exe
 .clang-format
