@@ -1,287 +1,271 @@
-#include <bits/stdc++.h>
-using namespace std;
+#include "algo.hpp"
+#include "graph.hpp"
+#include "json.hpp"
+#include "printer.hpp"
+#include "main.hpp"
 
-const string RESET = "\033[0m";
-const string CYAN = "\033[1;36m";
-const string GREEN = "\033[1;32m";
-const string YELLOW = "\033[1;33m";
-const string RED = "\033[1;31m";
-const string BOLD = "\033[1m";
+#include <fstream>
+#include <string>
 
-void dfs(int u, vector<vector<int>> &adj, vector<bool> &vis) {
-        vis[u] = true;
-        cout << GREEN << u << " " << RESET;
-        for (int v : adj[u]) {
-                if (!vis[v]) {
-                        dfs(v, adj, vis);
-                }
+
+void printBanner() {
+    println(Color::BOLD, "Tugas 1: Graph Algorithms Explorer");
+    println(Color::BOLD, "-----------------------------------\n");
+}
+
+void selectMenu(Graph<std::string>& graph) {
+    println(Color::BOLD, "\nMain Menu\n---------");
+    println(Color::WHITE, "0. Setup Graph");
+    println(Color::WHITE, "1. Graph Traversal (DFS / BFS)");
+    println(Color::WHITE, "2. Path Existence Check (A to B)");
+    println(Color::WHITE, "3. Graph Connectivity Check");
+    println(Color::WHITE, "4. Exit Program");
+    print(Color::BOLD, "Select an option (0-4) \n> ");
+
+    std::string input;
+    std::getline(std::cin, input);
+    try {
+        int option = std::stoi(input);
+        switch (option) {
+            case 0: 
+                setupGraph(graph);
+                break;
+            case 1:
+                graphTraversal(graph);
+                break;
+            case 2:
+                pathExistenceCheck(graph);
+                break;
+            case 3:
+                connectivityCheck(graph);
+                break;
+            case 4:
+                printInfo("Exiting program. Goodbye!");
+                exit(0);
+            default:
+                printError("Invalid option. Please select a number between 0 and 4.");
+                break;
         }
+    } catch (const std::exception&) {
+        printError("Invalid input. Please enter a number.");
+        return;
+    }
+}
+
+bool setupGraph(Graph<std::string>& graph) {
+    println(Color::BOLD, "\nGraph Setup\n----------");
+    println(Color::WHITE, "1. From File");
+    println(Color::WHITE, "2. Interactive Input");
+    print(Color::BOLD, "Select an option (1-2) \n> ");
+    std::string input;
+    std::getline(std::cin, input);
+    try {
+        int option = std::stoi(input);
+        switch (option) {
+            case 1: return loadFile(graph);
+            case 2: return loadInteractive(graph);
+            default:
+                printError("Invalid option. Please select 1 or 2.");
+                return false;
+        }
+    } catch (const std::exception&) {
+        printError("Invalid input. Please enter a number.");
+        return false;
+    }
+}
+
+bool loadFile(Graph<std::string>& graph) {
+    print(Color::BOLD, "Enter file path: \n> ");
+    std::string filePath;
+    std::getline(std::cin, filePath);
+    
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        printError("Failed to open file: ", filePath);
+        return false;
+    }
+
+    using json = nlohmann::json;
+    json input;
+    try {
+        file >> input;
+
+        graph = Graph<std::string>(input["directed"].get<bool>());
+
+        int nodeCount = 0;
+        for (const auto& node : input["nodes"]) {
+            graph.addNode(node.get<std::string>());
+            nodeCount++;
+        }
+
+        int edgeCount = 0;
+        for (const auto& edge : input["edges"]) {
+            graph.addEdge(edge[0].get<std::string>(), edge[1].get<std::string>());
+            edgeCount++;
+        }
+
+        printInfo((graph.directed() ? "Directed" : "Undirected"), " graph loaded successfully with ", nodeCount, " nodes and ", edgeCount, " edges from file: ", filePath);
+        return true;
+    } catch (const std::exception& e) {
+        printError("Failed to parse graph from file: ", e.what());
+        return false;
+    }   
+}
+
+bool loadInteractive(Graph<std::string>& graph) {
+    print(Color::BOLD, "Is the graph Directed (1) or Undirected (0)? \n> ");
+    std::string directedToken;
+    std::getline(std::cin, directedToken);
+    try {
+        int directedFlag = std::stoi(directedToken);
+        if (directedFlag != 0 && directedFlag != 1) {
+            printError("Invalid input. Please enter 1 for Directed or 0 for Undirected.");
+            return false;
+        }
+        graph = Graph<std::string>(directedFlag == 1);
+    } catch (const std::exception&) {
+        printError("Invalid input. Please enter a number.");
+        return false;
+    }
+
+    print(Color::BOLD, "Enter number of vertices (V) and edges (E): \n> ");
+    std::string nodeCountToken, edgeCountToken;
+    std::getline(std::cin, nodeCountToken);
+    try {
+        int nodeCount = std::stoi(nodeCountToken);
+        if (nodeCount < 0) {
+            printError("Node count must be a non-negative integer.");
+            return false;
+        }
+
+        std::getline(std::cin, edgeCountToken);
+        int edgeCount = std::stoi(edgeCountToken);
+        if (edgeCount < 0) {
+            printError("Edge count must be a non-negative integer.");
+            return false;
+        }
+
+        for (int i = 0; i < nodeCount; ++i) {
+            print(Color::BOLD, "Enter label for node ", i + 1, ":\n> ");
+            std::string label;
+            std::getline(std::cin, label);
+            graph.addNode(label);
+        }
+
+        for (int i = 0; i < edgeCount; ++i) {
+            print(Color::BOLD, "Enter edge ", i + 1, " (from to): \n> ");
+            std::string from, to;
+            std::getline(std::cin, from);
+            std::getline(std::cin, to);
+            graph.addEdge(from, to);
+        }
+
+        printInfo((graph.directed() ? "Directed" : "Undirected"), " graph loaded successfully with ", nodeCount, " nodes and ", edgeCount, " edges from interactive input.");
+        return true;
+    } catch (const std::exception&) {
+        printError("Invalid input. Please enter valid numbers for node and edge counts.");
+        return false;
+    }
+}
+
+void graphTraversal(const Graph<std::string>& graph) {
+    println(Color::BOLD, "\nGraph Traversal\n---------------");
+    println(Color::WHITE, "1. Depth-First Search (DFS)");
+    println(Color::WHITE, "2. Breadth-First Search (BFS)");
+    print(Color::BOLD, "Select an option (1-2) \n> ");
+    std::string input;
+    std::getline(std::cin, input);
+    try {
+        int option = std::stoi(input);
+        switch (option) {
+            case 1: 
+                performDFS(graph);
+                break;
+            case 2:
+                performBFS(graph);
+                break;
+            default:
+                printError("Invalid option. Please select 1 or 2.");
+                break;
+        }
+     } catch (const std::exception&) {
+        printError("Invalid input. Please enter a number.");
+        return;
+     }
+}
+
+void performDFS(const Graph<std::string>& graph) {
+    print(Color::BOLD, "Enter starting node for DFS: \n> ");
+    std::string startNode;
+    std::getline(std::cin, startNode);
+    printInfo("DFS Traversal Order: ");
+    try {
+        depthFirstSearch(graph, startNode);
+    } catch (const std::exception& e) {
+        printError("Error during DFS traversal: ", e.what());
+    }
+}
+
+void performBFS(const Graph<std::string>& graph) {
+    print(Color::BOLD, "Enter starting node for BFS: \n> ");
+    std::string startNode;
+    std::getline(std::cin, startNode);
+    printInfo("BFS Traversal Order: ");
+    try {
+        breadthFirstSearch(graph, startNode);
+    } catch (const std::exception& e) {
+        printError("Error during BFS traversal: ", e.what());
+    }
+}
+
+void pathExistenceCheck(const Graph<std::string>& graph) {
+    print(Color::BOLD, "Enter source node: \n> ");
+    std::string source;
+    std::getline(std::cin, source);
+    print(Color::BOLD, "Enter destination node: \n> ");
+    std::string destination;
+    std::getline(std::cin, destination);
+    try {
+        bool exists = pathExist(graph, source, destination);
+        if (exists) {
+            printInfo("A path exists from ", source, " to ", destination, ".");
+        } else {
+            printInfo("No path exists from ", source, " to ", destination, ".");
+        }
+    } catch (const std::exception& e) {
+        printError("Error during path existence check: ", e.what());
+    }
+}
+
+void connectivityCheck(const Graph<std::string>& graph) {
+    print(Color::BOLD, "Enforce strong connectivity check (1 = true, 0 = false)\n> ");
+    std::string input;
+    std::getline(std::cin, input);
+    try {
+        int enforceStrongFlag = std::stoi(input);
+        if (enforceStrongFlag != 0 && enforceStrongFlag != 1) {
+            printError("Invalid input. Please enter 1 for true or 0 for false.");
+            return;
+        }
+        bool enforceStrong = enforceStrongFlag == 1;
+        bool connected = isConnected(graph, enforceStrong);
+        if (connected) {
+            printInfo("The graph is ", (enforceStrong ? "strongly " : ""), "connected.");
+        } else {
+            printInfo("The graph is not ", (enforceStrong ? "strongly " : ""), "connected.");
+        }
+    } catch (const std::exception&) {
+        printError("Invalid input. Please enter a number.");
+    }
 }
 
 int main() {
-        int isDirected;
-        cout << CYAN << "==================================================\n";
-        cout << "             GRAPH ALGORITHMS EXPLORER            \n";
-        cout << "==================================================\n" << RESET;
+    printBanner();
+    Graph<std::string> graph;
 
-        cout << BOLD << "[SETUP] " << RESET << "Is the graph Undirected(0) or Directed (1)? ";
-        cin >> isDirected;
+    while (true) {
+        selectMenu(graph);
+    }
 
-        int n, m;
-        cout << BOLD << "[SETUP] " << RESET << "Enter the number of Vertices (V) and Edges (E): ";
-        cin >> n >> m;
-
-        vector<vector<int>> adj(n + 1);
-
-        cout << YELLOW << "\nPlease enter " << m << " edges (u v).\n";
-        if (isDirected) {
-                cout << "Note: For a directed graph, (u v) means an edge FROM u TO v.\n";
-        }
-        cout << "Note: Use 1-based indexing [1 to " << n << "]:\n" << RESET;
-
-        for (int i = 0; i < m; i++) {
-                int u, v;
-                cin >> u >> v;
-
-                if (u < 1 || u > n || v < 1 || v > n) {
-                        cout << RED << "Error: Invalid edge! Vertices must be between 1 and " << n << ".\n" << RESET;
-                        i--;
-                        continue;
-                }
-
-                adj[u].push_back(v);
-                if (!isDirected) {
-                        adj[v].push_back(u);
-                }
-        }
-
-        while (true) {
-                cout << CYAN << "\n=================== MAIN MENU ====================\n" << RESET;
-                cout << "  1. Graph Traversal (DFS / BFS)\n";
-                cout << "  2. Path Existence Check (A to B)\n";
-                cout << "  3. Graph Connectivity Check\n";
-                cout << "  4. Exit Program\n";
-                cout << CYAN << "--------------------------------------------------\n" << RESET;
-                cout << BOLD << "Select an option (1-4): " << RESET;
-
-                int choice;
-                cin >> choice;
-
-                if (choice == 1) {
-                        int startNode, method;
-                        cout << "Enter the starting vertex: ";
-                        cin >> startNode;
-                        cout << "Choose method - DFS (1) or BFS (2): ";
-                        cin >> method;
-
-                        if (startNode < 1 || startNode > n) {
-                                cout << RED << "[!] Invalid vertex. Please enter a number between 1 and " << n << ".\n"
-                                     << RESET;
-                                continue;
-                        }
-
-                        if (method == 1) {
-                                vector<bool> vis(n + 1, false);
-                                cout << BOLD << "\n[RESULT] DFS Traversal: " << RESET;
-                                dfs(startNode, adj, vis);
-                                cout << "\n";
-                        } else if (method == 2) {
-                                vector<bool> vis(n + 1, false);
-                                queue<int> q;
-
-                                q.push(startNode);
-                                vis[startNode] = true;
-
-                                cout << BOLD << "\n[RESULT] BFS Traversal: " << RESET;
-                                while (!q.empty()) {
-                                        int u = q.front();
-                                        q.pop();
-                                        cout << GREEN << u << " " << RESET;
-
-                                        for (int v : adj[u]) {
-                                                if (!vis[v]) {
-                                                        vis[v] = true;
-                                                        q.push(v);
-                                                }
-                                        }
-                                }
-                                cout << "\n";
-                        } else {
-                                cout << RED << "[!] Invalid method selected.\n" << RESET;
-                        }
-
-                } else if (choice == 2) {
-                        int a, b;
-                        cout << "Enter source vertex (A) and destination vertex (B): ";
-                        cin >> a >> b;
-
-                        if (a < 1 || a > n || b < 1 || b > n) {
-                                cout << RED << "[!] Invalid vertices. Please try again.\n" << RESET;
-                                continue;
-                        }
-
-                        vector<bool> vis(n + 1, false);
-                        queue<int> q;
-                        bool found = false;
-
-                        q.push(a);
-                        vis[a] = true;
-
-                        while (!q.empty()) {
-                                int u = q.front();
-                                q.pop();
-
-                                if (u == b) {
-                                        found = true;
-                                        break;
-                                }
-
-                                for (int v : adj[u]) {
-                                        if (!vis[v]) {
-                                                vis[v] = true;
-                                                q.push(v);
-                                        }
-                                }
-                        }
-
-                        if (found) {
-                                cout << GREEN << "\n[RESULT] Yes! A path exists from vertex " << a << " to vertex " << b
-                                     << ".\n"
-                                     << RESET;
-                        } else {
-                                cout << YELLOW << "\n[RESULT] No path exists from vertex " << a << " to vertex " << b
-                                     << ".\n"
-                                     << RESET;
-                        }
-
-                } else if (choice == 3) {
-                        if (!isDirected) {
-                                vector<bool> vis(n + 1, false);
-                                queue<int> q;
-                                int visitedCount = 0;
-
-                                q.push(1);
-                                vis[1] = true;
-
-                                while (!q.empty()) {
-                                        int u = q.front();
-                                        q.pop();
-                                        visitedCount++;
-
-                                        for (int v : adj[u]) {
-                                                if (!vis[v]) {
-                                                        vis[v] = true;
-                                                        q.push(v);
-                                                }
-                                        }
-                                }
-
-                                cout << "\n[RESULT] ";
-                                if (visitedCount == n) {
-                                        cout << GREEN << "Graph is Connected.\n" << RESET;
-                                } else {
-                                        cout << RED << "Graph is Disconnected.\n" << RESET;
-                                }
-
-                        } else {
-                                int subChoice;
-                                cout << CYAN << "\n--- Directed Graph Connectivity Options ---\n" << RESET;
-                                cout << "  1. Check reachability from a specific vertex\n";
-                                cout << "  2. Check if the graph is Strongly Connected\n";
-                                cout << BOLD << "Select an option (1-2): " << RESET;
-                                cin >> subChoice;
-
-                                if (subChoice == 1) {
-                                        int startNode;
-                                        cout << "Enter the vertex to check from: ";
-                                        cin >> startNode;
-
-                                        if (startNode < 1 || startNode > n) {
-                                                cout << RED
-                                                     << "[!] Invalid vertex. Please enter a number between 1 and " << n
-                                                     << ".\n"
-                                                     << RESET;
-                                                continue;
-                                        }
-
-                                        vector<bool> vis(n + 1, false);
-                                        queue<int> q;
-                                        int visitedCount = 0;
-
-                                        q.push(startNode);
-                                        vis[startNode] = true;
-
-                                        while (!q.empty()) {
-                                                int u = q.front();
-                                                q.pop();
-                                                visitedCount++;
-
-                                                for (int v : adj[u]) {
-                                                        if (!vis[v]) {
-                                                                vis[v] = true;
-                                                                q.push(v);
-                                                        }
-                                                }
-                                        }
-
-                                        cout << "\n[RESULT] ";
-                                        if (visitedCount == n) {
-                                                cout << GREEN << "Yes! All vertices are reachable from vertex "
-                                                     << startNode << ".\n"
-                                                     << RESET;
-                                        } else {
-                                                cout << YELLOW << "No. Only " << visitedCount << " out of " << n
-                                                     << " vertices are reachable from vertex " << startNode << ".\n"
-                                                     << RESET;
-                                        }
-
-                                } else if (subChoice == 2) {
-                                        bool isStronglyConnected = true;
-
-                                        for (int i = 1; i <= n; i++) {
-                                                vector<bool> vis(n + 1, false);
-                                                queue<int> q;
-                                                int visitedCount = 0;
-
-                                                q.push(i);
-                                                vis[i] = true;
-
-                                                while (!q.empty()) {
-                                                        int u = q.front();
-                                                        q.pop();
-                                                        visitedCount++;
-
-                                                        for (int v : adj[u]) {
-                                                                if (!vis[v]) {
-                                                                        vis[v] = true;
-                                                                        q.push(v);
-                                                                }
-                                                        }
-                                                }
-
-                                                if (visitedCount < n) {
-                                                        isStronglyConnected = false;
-                                                        break;
-                                                }
-                                        }
-
-                                        cout << "\n[RESULT] ";
-                                        if (isStronglyConnected) {
-                                                cout << GREEN << "Graph is Strongly Connected.\n" << RESET;
-                                        } else {
-                                                cout << RED << "Graph is Not Strongly Connected.\n" << RESET;
-                                        }
-
-                                } else {
-                                        cout << RED << "[!] Invalid option. Returning to Main Menu.\n" << RESET;
-                                }
-                        }
-
-                } else if (choice == 4) {
-                        cout << CYAN << "\nTerminating program. Thank you!\n" << RESET;
-                        break;
-                } else {
-                        cout << RED << "[!] Invalid option. Please select a number between 1 and 4.\n" << RESET;
-                }
-        }
+    return 0;
 }

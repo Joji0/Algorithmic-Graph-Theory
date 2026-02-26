@@ -7,5 +7,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(Tugas_1
-    main.cpp
+    src/main.cpp
 )

@@ -26,12 +26,16 @@ class Graph {
         if (inserted) {
             name_.push_back(node);
             adjList_.emplace_back();
+        } else {
+            throw std::invalid_argument("Node already exists in the graph.");
         }
     }
 
     void addEdge(const T& from, const T& to) {
-        addNode(from);
-        addNode(to);
+        try {
+            addNode(from);
+            addNode(to);
+        } catch (const std::invalid_argument&) {}
 
         adjList_[id_[from]].push_back(id_[to]);
         if (!directed_) adjList_[id_[to]].push_back(id_[from]);
@@ -58,9 +62,7 @@ class Graph {
     }
 
     void removeEdge(const T& from, const T& to) {
-        if (id_.find(from) == id_.end() || id_.find(to) == id_.end()) {
-            throw std::out_of_range("The requested nodes do not exist in the graph.");
-        }
+        if (id_.find(from) == id_.end() || id_.find(to) == id_.end()) return;
 
         auto& fromAdjList = adjList_[id_[from]];
         fromAdjList.erase(std::remove(fromAdjList.begin(), fromAdjList.end(), id_[to]), fromAdjList.end());

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graph.hpp"
+#include "printer.hpp"
 
 #include <iostream>
 #include <stack>
@@ -20,7 +21,7 @@ void depthFirstSearch(const Graph<T>& g, const T &start) {
         int current = dfs.top(); 
         dfs.pop();
 
-        std::cout << g.name(current) << " -> ";
+        print(Color::GREEN, g.name(current), " -> ");
 
         for (auto& neighbor : g.adjList(current)) {
             if (!visited[neighbor]) {
@@ -29,6 +30,8 @@ void depthFirstSearch(const Graph<T>& g, const T &start) {
             }
         }
     }
+
+    println(Color::GREEN, "END");
 }
 
 template<typename T>
@@ -44,7 +47,7 @@ void breadthFirstSearch(const Graph<T>& g, const T &start) {
         int current = bfs.front();
         bfs.pop();
 
-        std::cout << g.name(current) << " -> ";
+        print(Color::GREEN, g.name(current), " -> ");
 
         for (auto& neighbor : g.adjList(current)) {
             if (!visited[neighbor]) {
@@ -53,6 +56,8 @@ void breadthFirstSearch(const Graph<T>& g, const T &start) {
             }
         }
     }
+
+    println(Color::GREEN, "END");
 }
 
 template<typename T>
