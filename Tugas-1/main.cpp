@@ -24,7 +24,7 @@ void solve() {
         cout << "             GRAPH ALGORITHMS EXPLORER            \n";
         cout << "==================================================\n" << RESET;
 
-        cout << BOLD << "[SETUP] " << RESET << "Is the graph Directed (1) or Undirected (0)? ";
+        cout << BOLD << "[SETUP] " << RESET << "Is the graph Undirected(0) or Directed (1)? ";
         cin >> isDirected;
 
         int n, m;
@@ -35,7 +35,7 @@ void solve() {
 
         cout << YELLOW << "\nPlease enter " << m << " edges (u v).\n";
         if (isDirected) {
-                cout << "Note: For a directed graph, 'u v' means an edge FROM u TO v.\n";
+                cout << "Note: For a directed graph, (u v) means an edge FROM u TO v.\n";
         }
         cout << "Note: Use 1-based indexing [1 to " << n << "]:\n" << RESET;
 
@@ -155,38 +155,126 @@ void solve() {
                         }
 
                 } else if (choice == 3) {
-                        vector<bool> vis(n + 1, false);
-                        queue<int> q;
-                        int visitedCount = 0;
+                        if (!isDirected) {
+                                vector<bool> vis(n + 1, false);
+                                queue<int> q;
+                                int visitedCount = 0;
 
-                        q.push(1);
-                        vis[1] = true;
+                                q.push(1);
+                                vis[1] = true;
 
-                        while (!q.empty()) {
-                                int u = q.front();
-                                q.pop();
-                                visitedCount++;
+                                while (!q.empty()) {
+                                        int u = q.front();
+                                        q.pop();
+                                        visitedCount++;
 
-                                for (int v : adj[u]) {
-                                        if (!vis[v]) {
-                                                vis[v] = true;
-                                                q.push(v);
+                                        for (int v : adj[u]) {
+                                                if (!vis[v]) {
+                                                        vis[v] = true;
+                                                        q.push(v);
+                                                }
                                         }
                                 }
-                        }
 
-                        cout << "\n[RESULT] ";
-                        if (visitedCount == n) {
-                                if (isDirected) {
-                                        cout
-                                            << GREEN
-                                            << "Graph is weakly connected (All vertices are reachable from vertex 1).\n"
-                                            << RESET;
+                                cout << "\n[RESULT] ";
+                                if (visitedCount == n) {
+                                        cout << GREEN << "Graph is Connected.\n" << RESET;
                                 } else {
-                                        cout << GREEN << "Graph is fully Connected.\n" << RESET;
+                                        cout << RED << "Graph is Disconnected.\n" << RESET;
                                 }
+
                         } else {
-                                cout << RED << "Graph is Disconnected. Not all vertices can be reached.\n" << RESET;
+                                int subChoice;
+                                cout << CYAN << "\n--- Directed Graph Connectivity Options ---\n" << RESET;
+                                cout << "  1. Check reachability from a specific vertex\n";
+                                cout << "  2. Check if the graph is Strongly Connected\n";
+                                cout << BOLD << "Select an option (1-2): " << RESET;
+                                cin >> subChoice;
+
+                                if (subChoice == 1) {
+                                        int startNode;
+                                        cout << "Enter the vertex to check from: ";
+                                        cin >> startNode;
+
+                                        if (startNode < 1 || startNode > n) {
+                                                cout << RED
+                                                     << "[!] Invalid vertex. Please enter a number between 1 and " << n
+                                                     << ".\n"
+                                                     << RESET;
+                                                continue;
+                                        }
+
+                                        vector<bool> vis(n + 1, false);
+                                        queue<int> q;
+                                        int visitedCount = 0;
+
+                                        q.push(startNode);
+                                        vis[startNode] = true;
+
+                                        while (!q.empty()) {
+                                                int u = q.front();
+                                                q.pop();
+                                                visitedCount++;
+
+                                                for (int v : adj[u]) {
+                                                        if (!vis[v]) {
+                                                                vis[v] = true;
+                                                                q.push(v);
+                                                        }
+                                                }
+                                        }
+
+                                        cout << "\n[RESULT] ";
+                                        if (visitedCount == n) {
+                                                cout << GREEN << "Yes! All vertices are reachable from vertex "
+                                                     << startNode << ".\n"
+                                                     << RESET;
+                                        } else {
+                                                cout << YELLOW << "No. Only " << visitedCount << " out of " << n
+                                                     << " vertices are reachable from vertex " << startNode << ".\n"
+                                                     << RESET;
+                                        }
+
+                                } else if (subChoice == 2) {
+                                        bool isStronglyConnected = true;
+
+                                        for (int i = 1; i <= n; i++) {
+                                                vector<bool> vis(n + 1, false);
+                                                queue<int> q;
+                                                int visitedCount = 0;
+
+                                                q.push(i);
+                                                vis[i] = true;
+
+                                                while (!q.empty()) {
+                                                        int u = q.front();
+                                                        q.pop();
+                                                        visitedCount++;
+
+                                                        for (int v : adj[u]) {
+                                                                if (!vis[v]) {
+                                                                        vis[v] = true;
+                                                                        q.push(v);
+                                                                }
+                                                        }
+                                                }
+
+                                                if (visitedCount < n) {
+                                                        isStronglyConnected = false;
+                                                        break;
+                                                }
+                                        }
+
+                                        cout << "\n[RESULT] ";
+                                        if (isStronglyConnected) {
+                                                cout << GREEN << "Graph is Strongly Connected.\n" << RESET;
+                                        } else {
+                                                cout << RED << "Graph is Not Strongly Connected.\n" << RESET;
+                                        }
+
+                                } else {
+                                        cout << RED << "[!] Invalid option. Returning to Main Menu.\n" << RESET;
+                                }
                         }
 
                 } else if (choice == 4) {
