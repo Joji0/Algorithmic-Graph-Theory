@@ -83,3 +83,38 @@ class Graph {
     std::vector<T> name_;
     std::vector<std::vector<int>> adjList_;
 };
+
+class Grid {
+    public:
+    Grid(int rows, int cols) : rows_(rows), cols_(cols), grid_(rows * cols, false) {}
+
+    const auto size() const { return grid_.size(); }
+
+    const auto& at(int index) const { return grid_.at(index); }
+    auto& at(int index) { return grid_.at(index); }
+
+    const auto& at(int row, int col) const { return grid_.at(row * cols_ + col); }
+    auto& at(int row, int col) { return grid_.at(row * cols_ + col); }
+
+    auto neighbors(int index) const {
+        std::vector<int> result;
+        int row = index / cols_;
+        int col = index % cols_;
+
+        if (row > 0) result.push_back((row - 1) * cols_ + col);
+        if (row < rows_ - 1) result.push_back((row + 1) * cols_ + col);
+        if (col > 0) result.push_back(row * cols_ + (col - 1));
+        if (col < cols_ - 1) result.push_back(row * cols_ + (col + 1));
+
+        return result;
+    }
+
+    auto neighbors(int row, int col) const {
+        return neighbors(row * cols_ + col);
+    }
+
+    private:
+    int rows_;
+    int cols_;
+    std::vector<char> grid_;
+};
