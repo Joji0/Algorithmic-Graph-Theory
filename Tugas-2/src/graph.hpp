@@ -3,7 +3,6 @@
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
-#include <stdexcept>
 
 template<typename T>
 class Graph {
@@ -12,7 +11,7 @@ class Graph {
 
     const auto& directed() const { return directed_; }
 
-    const auto& size() const { return id_.size(); }
+    const auto size() const { return id_.size(); }
 
     const bool empty() const { return id_.empty(); }
 
@@ -28,21 +27,17 @@ class Graph {
     void addNode(const T& node) {
         auto [it, inserted] = id_.emplace(node, id_.size());
         if (inserted) {
-            name_.push_back(node);
+            name_.emplace_back(node);
             adjList_.emplace_back();
-        } else {
-            throw std::invalid_argument("Node already exists in the graph.");
         }
     }
 
     void addEdge(const T& from, const T& to) {
-        try {
-            addNode(from);
-            addNode(to);
-        } catch (const std::invalid_argument&) {}
+        addNode(from);
+        addNode(to);
 
-        adjList_[id_[from]].push_back(id_[to]);
-        if (!directed_) adjList_[id_[to]].push_back(id_[from]);
+        adjList_[id_[from]].emplace_back(id_[to]);
+        if (!directed_) adjList_[id_[to]].emplace_back(id_[from]);
     }
 
     void removeNode(const T& node) {
@@ -101,10 +96,10 @@ class Grid {
         int row = index / cols_;
         int col = index % cols_;
 
-        if (row > 0) result.push_back((row - 1) * cols_ + col);
-        if (row < rows_ - 1) result.push_back((row + 1) * cols_ + col);
-        if (col > 0) result.push_back(row * cols_ + (col - 1));
-        if (col < cols_ - 1) result.push_back(row * cols_ + (col + 1));
+        if (row > 0) result.emplace_back((row - 1) * cols_ + col);
+        if (row < rows_ - 1) result.emplace_back((row + 1) * cols_ + col);
+        if (col > 0) result.emplace_back(row * cols_ + (col - 1));
+        if (col < cols_ - 1) result.emplace_back(row * cols_ + (col + 1));
 
         return result;
     }
