@@ -8,6 +8,8 @@
 #include <queue>
 #include <string>
 
+namespace tugas_1 {
+
 template<typename T>
 void depthFirstSearch(const Graph<T>& g, const T &start) {
     std::vector<char> visited(g.id().size(), false);
@@ -143,4 +145,6 @@ bool isConnected(const Graph<T>& g, bool strongly) {
     }
 
     return true;
+}
+
 }

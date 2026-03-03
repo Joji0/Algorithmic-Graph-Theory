@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <stdexcept>
 
+namespace tugas_1 {
+
 template<typename T>
 class Graph {
     public:
@@ -79,3 +81,5 @@ class Graph {
     std::vector<T> name_;
     std::vector<std::vector<int>> adjList_;
 };
+
+} // namespace tugas_1

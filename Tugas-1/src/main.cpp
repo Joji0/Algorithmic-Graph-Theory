@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 
+namespace tugas_1 {
 
 void printBanner() {
     println(Color::BOLD, "Tugas 1: Graph Algorithms Explorer");
@@ -258,6 +259,10 @@ void connectivityCheck(const Graph<std::string>& graph) {
         printError("Invalid input. Please enter a number.");
     }
 }
+
+} // namespace tugas_1
+
+using namespace tugas_1;
 
 int main() {
     printBanner();
