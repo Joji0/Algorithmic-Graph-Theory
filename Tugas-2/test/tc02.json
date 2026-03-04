@@ -1,0 +1,15 @@
+{
+    "type" : "grid",
+    "data" : {
+        "directed" : false,
+        "nodes" : ["A", "B", "C", "D", "E"],
+        "edges" : [
+            ["A", "B"],
+            ["B", "C"],
+            ["C", "D"],
+            ["D", "E"],
+            ["B", "D"],
+            ["A", "C"]
+        ]
+    }
+}
