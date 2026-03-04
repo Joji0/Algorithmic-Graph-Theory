@@ -84,6 +84,8 @@ class Grid {
     Grid(int rows, int cols) : rows_(rows), cols_(cols), grid_(rows * cols, false) {}
 
     const auto size() const { return grid_.size(); }
+    const int rows() const { return rows_; }
+    const int cols() const { return cols_; }
 
     const auto& at(int index) const { return grid_.at(index); }
     auto& at(int index) { return grid_.at(index); }
