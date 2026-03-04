@@ -1,5 +1,9 @@
 # Tugas 2
 
+* Menentukan jumlah komponen
+* Menentukan komponen terbesar
+* Menentukan jumlah island
+
 ## Prasyarat
 
 * Compiler C++17
