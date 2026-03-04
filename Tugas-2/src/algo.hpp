@@ -41,7 +41,7 @@ int findComponentCount(Graph<T>& g) {
 }
 
 template<typename T>
-int findLargestComponent(Graph<T>& g) {
+int findComponentLargest(Graph<T>& g) {
     int largest = 0;
     std::vector<char> visited(g.size(), false);
 
