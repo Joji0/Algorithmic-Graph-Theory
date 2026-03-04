@@ -32,7 +32,7 @@ void print(const std::string& color, Args&&... args) {
 
 template <typename... Args>
 void printInfo(Args&&... args) {
-    println(Color::CYAN, "[INFO] ", std::forward<Args>(args)...);
+    println(Color::GREEN, "[INFO] ", std::forward<Args>(args)...);
 }
 
 template <typename... Args>
@@ -46,6 +46,6 @@ void printWarning(Args&&... args) {
 }
 
 template <typename... Args>
-void printBold(Args&&... args) {
-    println(Color::BOLD, "[INSTRUCTION] ", std::forward<Args>(args)...);
+void printTitle(Args&&... args) {
+    println(Color::BOLD, Color::MAGENTA, '\n', std::forward<Args>(args)...);
 }
