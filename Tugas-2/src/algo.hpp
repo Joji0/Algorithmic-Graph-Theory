@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graph.hpp"
+#include "printer.hpp"
 #include <stack>
 
 template<typename T>
@@ -13,6 +14,7 @@ int depthFirstSearch(const Graph<T>& g, const T &start, std::vector<char>& visit
 
     while(!dfs.empty()) {
         int current = dfs.top(); 
+        print(Color::YELLOW, g.name(current), " -> ");
         dfs.pop();
         for (auto& neighbor : g.adjList(current)) {
             if (!visited[neighbor]) {
@@ -22,17 +24,26 @@ int depthFirstSearch(const Graph<T>& g, const T &start, std::vector<char>& visit
             }
         }
     }
+    
+    println(Color::YELLOW, " [END] Total: ", count);
+
     return count;
 }
 
 template<typename T>
 int findComponentCount(Graph<T>& g) {
+    if (g.directed()) {
+        auto undirected = g.undirected();
+        printInfo("Current graph is directed, transforming to undirected for component counting");
+        return findComponentCount(undirected);
+    }
+
     int components = 0;
     std::vector<char> visited(g.size(), false);
 
     for (int i = 0; i < g.size(); ++i) {
         if (!visited[i]) {
-            components++;
+            print(Color::YELLOW, "Component ", ++components, ": ");
             depthFirstSearch(g, g.name(i), visited);
         }
     }
@@ -42,6 +53,12 @@ int findComponentCount(Graph<T>& g) {
 
 template<typename T>
 int findComponentLargest(Graph<T>& g) {
+    if (g.directed()) {
+        auto undirected = g.undirected();
+        printInfo("Current graph is directed, transforming to undirected for component counting");
+        return findComponentCount(undirected);
+    }
+
     int largest = 0;
     std::vector<char> visited(g.size(), false);
 
