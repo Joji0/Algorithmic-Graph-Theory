@@ -172,7 +172,7 @@ void Program::parseGrid() {
 }
 
 void Program::readInteractive() {
-    printTitle("READ FROM STANDARD INPUT");
+    printTitle("READ FROM STANDARD INPUT\n");
     println(Color::BLUE, "Select an option:");
     println(Color::WHITE, "[1] Read a standard graph");
     println(Color::WHITE, "[2] Read a grid graph\n");

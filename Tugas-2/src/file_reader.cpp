@@ -117,22 +117,22 @@ ReturnType parseFile(const std::string& path) {
             throw std::runtime_error("Invalid 'data' format for type 'grid'.");
         }
 
-        if (type == "directed" || type == "undirected") {
-            json graphData = input;
-            if (!graphData.contains("directed")) {
-                graphData["directed"] = (type == "directed");
+        if (type == "graph") {
+            const auto& data = input.at("data");
+            if (!data.contains("directed")) {
+                throw std::runtime_error("Graph JSON must contain a 'directed' boolean field.");
             }
 
-            if (!graphData.contains("nodes") || !graphData.at("nodes").is_array() || graphData.at("nodes").empty()) {
+            if (!data.contains("nodes") || !data.at("nodes").is_array() || data.at("nodes").empty()) {
                 throw std::runtime_error("Graph JSON must contain a non-empty 'nodes' array.");
             }
 
-            if (graphData.at("nodes").at(0).is_number_integer()) {
-                return parseGraphFromJson<int>(graphData);
+            if (data.at("nodes").at(0).is_number_integer()) {
+                return parseGraphFromJson<int>(data);
             }
 
-            if (graphData.at("nodes").at(0).is_string()) {
-                return parseGraphFromJson<std::string>(graphData);
+            if (data.at("nodes").at(0).is_string()) {
+                return parseGraphFromJson<std::string>(data);
             }
 
             throw std::runtime_error("Node type must be integer or string.");
@@ -144,7 +144,7 @@ ReturnType parseFile(const std::string& path) {
 }
 
 void Program::readFile() {
-    printTitle("READ FROM FILE");
+    printTitle("READ FROM FILE\n");
     print(Color::CYAN, "[Enter JSON file path] > ");
     
     std::string path;

@@ -8,7 +8,7 @@
 #include <vector>
 
 Program::Menu Program::select() {
-    printTitle("MAIN MENU");
+    printTitle("MAIN MENU\n");
     println(Color::BLUE, "Select an option:");
     println(Color::WHITE, "[1] Read graph from file");
     println(Color::WHITE, "[2] Read graph from standard input");
@@ -56,7 +56,7 @@ void Program::execute(Menu menu) {
 }
 
 void Program::findComponent() {
-    printTitle("FIND NUMBER OF COMPONENTS IN GRAPH");
+    printTitle("FIND NUMBER OF COMPONENTS IN GRAPH\n");
     if (!intGraph_.empty()) {
         printInfo("Connected components: ", findComponentCount(intGraph_));
         return;
@@ -71,7 +71,7 @@ void Program::findComponent() {
 }
 
 void Program::findLargestComponent() {
-    printTitle("FIND LARGEST COMPONENT IN GRAPH");
+    printTitle("FIND LARGEST COMPONENT IN GRAPH\n");
     if (!intGraph_.empty()) {
         printInfo("Largest component size: ", findComponentLargest(intGraph_));
         return;
@@ -86,11 +86,12 @@ void Program::findLargestComponent() {
 }
 
 void Program::findIslands() {
-    printTitle("FIND NUMBER OF ISLANDS IN GRID GRAPH");
+    printTitle("FIND NUMBER OF ISLANDS IN GRID GRAPH\n");
     if (gridGraph_.size() == 0 || gridGraph_.rows() == 0 || gridGraph_.cols() == 0) {
         printError("No grid graph is loaded. Please read a grid first.");
         return;
     }
 
+    gridGraph_.print();
     printInfo("Number of islands: ", findIslandCount(gridGraph_));
 }
