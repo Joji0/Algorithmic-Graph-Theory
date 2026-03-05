@@ -1,5 +1,6 @@
 #pragma once
 
+#include "printer.hpp"
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
@@ -71,6 +72,34 @@ class Graph {
             toAdjList.erase(std::remove(toAdjList.begin(), toAdjList.end(), id_[from]), toAdjList.end());
         }
     }
+
+    Graph undirected() const {
+        if (!directed_) return *this;
+        Graph result(false);
+        for (const auto& node : name_) {
+            result.addNode(node);
+        }
+        for (size_t i = 0; i < adjList_.size(); ++i) {
+            for (const auto& neighbor : adjList_[i]) {
+                result.addEdge(name_[i], name_[neighbor]);
+            }
+        }
+        return result;
+    }
+
+    Graph transpose() const {
+        if (!directed_) return *this;
+        Graph result(directed_);
+        for (const auto& node : name_) {
+            result.addNode(node);
+        }
+        for (size_t i = 0; i < adjList_.size(); ++i) {
+            for (const auto& neighbor : adjList_[i]) {
+                result.addEdge(name_[neighbor], name_[i]);
+            }
+        }
+        return result;
+    }
     
     private:
     bool directed_;
@@ -108,6 +137,19 @@ class Grid {
 
     auto neighbors(int row, int col) const {
         return neighbors(row * cols_ + col);
+    }
+
+    void print() const {
+        for (int row = 0; row < rows_; row++) {
+            for (int col = 0; col < cols_; col++) {
+                if (at(row, col)) {
+                    ::print(Color::GREEN, "1");
+                } else {
+                    ::print(Color::BLUE, "0");
+                }
+            }
+            std::cout << "\n";
+        }
     }
 
     private:
