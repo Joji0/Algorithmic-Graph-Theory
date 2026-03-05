@@ -1,0 +1,8 @@
+{
+    "type" : "graph",
+    "data" : {
+        "directed" : false,
+        "nodes" : [1, 2, 3, 4, 5],
+        "edges" : []
+    }
+}
