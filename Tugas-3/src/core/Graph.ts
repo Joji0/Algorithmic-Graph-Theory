@@ -1,0 +1,446 @@
+export class Graph {
+  private directed_: boolean;
+  private id_: Map<string, number>;
+  private name_: string[];
+  private adjList_: number[][];
+
+  constructor(directed: boolean = false) {
+    this.directed_ = directed;
+    this.id_ = new Map();
+    this.name_ = [];
+    this.adjList_ = [];
+  }
+
+  get isDirected(): boolean {
+    return this.directed_;
+  }
+
+  get size(): number {
+    return this.id_.size;
+  }
+
+  get isEmpty(): boolean {
+    return this.id_.size === 0;
+  }
+
+  get nodeNames(): string[] {
+    return [...this.name_];
+  }
+
+  get nodeIds(): Map<string, number> {
+    return new Map(this.id_);
+  }
+
+  getId(name: string): number {
+    const id = this.id_.get(name);
+    if (id === undefined) {
+      throw new Error(`Node "${name}" does not exist in the graph.`);
+    }
+    return id;
+  }
+
+  getName(id: number): string {
+    if (id < 0 || id >= this.name_.length) {
+      throw new Error(`Node ID ${id} is out of range.`);
+    }
+    return this.name_[id];
+  }
+
+  getAdjList(): number[][];
+  getAdjList(id: number): number[];
+  getAdjList(id?: number): number[][] | number[] {
+    if (id !== undefined) {
+      if (id < 0 || id >= this.adjList_.length) {
+        throw new Error(`Node ID ${id} is out of range.`);
+      }
+      return [...this.adjList_[id]];
+    }
+    return this.adjList_.map((neighbors) => [...neighbors]);
+  }
+
+  hasNode(name: string): boolean {
+    return this.id_.has(name);
+  }
+
+  hasEdge(from: string, to: string): boolean {
+    if (!this.id_.has(from) || !this.id_.has(to)) return false;
+    const fromId = this.id_.get(from)!;
+    const toId = this.id_.get(to)!;
+    return this.adjList_[fromId].includes(toId);
+  }
+
+  addNode(name: string): void {
+    if (this.id_.has(name)) return;
+    this.id_.set(name, this.id_.size);
+    this.name_.push(name);
+    this.adjList_.push([]);
+  }
+
+  addEdge(from: string, to: string): void {
+    this.addNode(from);
+    this.addNode(to);
+
+    const fromId = this.id_.get(from)!;
+    const toId = this.id_.get(to)!;
+
+    if (!this.adjList_[fromId].includes(toId)) {
+      this.adjList_[fromId].push(toId);
+    }
+
+    if (!this.directed_ && !this.adjList_[toId].includes(fromId)) {
+      this.adjList_[toId].push(fromId);
+    }
+  }
+
+  removeNode(name: string): void {
+    if (!this.id_.has(name)) return;
+
+    const nodeId = this.id_.get(name)!;
+    this.id_.delete(name);
+    this.name_.splice(nodeId, 1);
+    this.adjList_.splice(nodeId, 1);
+
+    for (const [key, id] of this.id_) {
+      if (id > nodeId) {
+        this.id_.set(key, id - 1);
+      }
+    }
+
+    for (const neighbors of this.adjList_) {
+      for (let i = neighbors.length - 1; i >= 0; i--) {
+        if (neighbors[i] === nodeId) {
+          neighbors.splice(i, 1);
+        } else if (neighbors[i] > nodeId) {
+          neighbors[i]--;
+        }
+      }
+    }
+  }
+
+  removeEdge(from: string, to: string): void {
+    if (!this.id_.has(from) || !this.id_.has(to)) return;
+
+    const fromId = this.id_.get(from)!;
+    const toId = this.id_.get(to)!;
+
+    this.adjList_[fromId] = this.adjList_[fromId].filter((n) => n !== toId);
+
+    if (!this.directed_) {
+      this.adjList_[toId] = this.adjList_[toId].filter((n) => n !== fromId);
+    }
+  }
+
+  getEdges(): Array<[string, string]> {
+    const edges: Array<[string, string]> = [];
+    const seen = new Set<string>();
+
+    for (let i = 0; i < this.adjList_.length; i++) {
+      for (const neighbor of this.adjList_[i]) {
+        const edgeKey = this.directed_
+          ? `${i}->${neighbor}`
+          : `${Math.min(i, neighbor)}-${Math.max(i, neighbor)}`;
+
+        if (!seen.has(edgeKey)) {
+          seen.add(edgeKey);
+          edges.push([this.name_[i], this.name_[neighbor]]);
+        }
+      }
+    }
+
+    return edges;
+  }
+
+  getDegree(name: string): number {
+    const id = this.getId(name);
+    return this.adjList_[id].length;
+  }
+
+  getNeighbors(name: string): string[] {
+    const id = this.getId(name);
+    return this.adjList_[id].map((nId) => this.name_[nId]);
+  }
+
+  clone(): Graph {
+    const g = new Graph(this.directed_);
+    for (const name of this.name_) {
+      g.addNode(name);
+    }
+    for (const [from, to] of this.getEdges()) {
+      g.addEdge(from, to);
+    }
+    return g;
+  }
+
+  clear(): void {
+    this.id_.clear();
+    this.name_ = [];
+    this.adjList_ = [];
+  }
+
+  toJSON(): object {
+    return {
+      directed: this.directed_,
+      nodes: [...this.name_],
+      edges: this.getEdges(),
+    };
+  }
+
+  static fromJSON(data: { directed: boolean; nodes: string[]; edges: [string, string][] }): Graph {
+    const g = new Graph(data.directed);
+    for (const node of data.nodes) {
+      g.addNode(node);
+    }
+    for (const [from, to] of data.edges) {
+      g.addEdge(from, to);
+    }
+    return g;
+  }
+}
+
+export class Grid {
+  private rows_: number;
+  private cols_: number;
+  private grid_: boolean[];
+
+  constructor(rows: number, cols: number) {
+    this.rows_ = rows;
+    this.cols_ = cols;
+    this.grid_ = new Array(rows * cols).fill(false);
+  }
+
+  get rows(): number { return this.rows_; }
+  get cols(): number { return this.cols_; }
+  get size(): number { return this.grid_.length; }
+
+  at(index: number): boolean;
+  at(row: number, col: number): boolean;
+  at(rowOrIndex: number, col?: number): boolean {
+    if (col !== undefined) {
+      return this.grid_[rowOrIndex * this.cols_ + col];
+    }
+    return this.grid_[rowOrIndex];
+  }
+
+  set(row: number, col: number, value: boolean): void {
+    this.grid_[row * this.cols_ + col] = value;
+  }
+
+  setByIndex(index: number, value: boolean): void {
+    this.grid_[index] = value;
+  }
+
+  clone(): Grid {
+    const cloned = new Grid(this.rows_, this.cols_);
+    for (let i = 0; i < this.grid_.length; i++) {
+      cloned.setByIndex(i, this.grid_[i]);
+    }
+    return cloned;
+  }
+
+  neighbors(index: number): number[] {
+    const result: number[] = [];
+    const row = Math.floor(index / this.cols_);
+    const col = index % this.cols_;
+    if (row > 0) result.push((row - 1) * this.cols_ + col);
+    if (row < this.rows_ - 1) result.push((row + 1) * this.cols_ + col);
+    if (col > 0) result.push(row * this.cols_ + (col - 1));
+    if (col < this.cols_ - 1) result.push(row * this.cols_ + (col + 1));
+    return result;
+  }
+
+  getGridData(): boolean[][] {
+    const data: boolean[][] = [];
+    for (let r = 0; r < this.rows_; r++) {
+      const row: boolean[] = [];
+      for (let c = 0; c < this.cols_; c++) {
+        row.push(this.grid_[r * this.cols_ + c]);
+      }
+      data.push(row);
+    }
+    return data;
+  }
+}
+
+export class PresetGraphs {
+  static petersen(): Graph {
+    const g = new Graph(false);
+    const outer = ['A', 'B', 'C', 'D', 'E'];
+    const inner = ['F', 'G', 'H', 'I', 'J'];
+
+    for (const n of [...outer, ...inner]) g.addNode(n);
+
+    for (let i = 0; i < 5; i++) {
+      g.addEdge(outer[i], outer[(i + 1) % 5]);
+      g.addEdge(outer[i], inner[i]);
+      g.addEdge(inner[i], inner[(i + 2) % 5]);
+    }
+
+    return g;
+  }
+
+  static complete(n: number): Graph {
+    const g = new Graph(false);
+    const nodes: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const name = String.fromCharCode(65 + i);
+      nodes.push(name);
+      g.addNode(name);
+    }
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        g.addEdge(nodes[i], nodes[j]);
+      }
+    }
+    return g;
+  }
+
+  static completeBipartite(m: number, n: number): Graph {
+    const g = new Graph(false);
+    const setA: string[] = [];
+    const setB: string[] = [];
+
+    for (let i = 0; i < m; i++) {
+      const name = `U${i + 1}`;
+      setA.push(name);
+      g.addNode(name);
+    }
+    for (let i = 0; i < n; i++) {
+      const name = `V${i + 1}`;
+      setB.push(name);
+      g.addNode(name);
+    }
+
+    for (const a of setA) {
+      for (const b of setB) {
+        g.addEdge(a, b);
+      }
+    }
+
+    return g;
+  }
+
+  static cycle(n: number): Graph {
+    const g = new Graph(false);
+    const nodes: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const name = String.fromCharCode(65 + i);
+      nodes.push(name);
+      g.addNode(name);
+    }
+    for (let i = 0; i < n; i++) {
+      g.addEdge(nodes[i], nodes[(i + 1) % n]);
+    }
+    return g;
+  }
+
+  static star(n: number): Graph {
+    const g = new Graph(false);
+    g.addNode('Center');
+    for (let i = 0; i < n; i++) {
+      const name = `L${i + 1}`;
+      g.addNode(name);
+      g.addEdge('Center', name);
+    }
+    return g;
+  }
+
+  static cube(): Graph {
+    const g = new Graph(false);
+    const nodes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    for (const n of nodes) g.addNode(n);
+
+    g.addEdge('A', 'B'); g.addEdge('B', 'C'); g.addEdge('C', 'D'); g.addEdge('D', 'A');
+    g.addEdge('E', 'F'); g.addEdge('F', 'G'); g.addEdge('G', 'H'); g.addEdge('H', 'E');
+    g.addEdge('A', 'E'); g.addEdge('B', 'F'); g.addEdge('C', 'G'); g.addEdge('D', 'H');
+
+    return g;
+  }
+
+  static wheel(n: number): Graph {
+    const g = new Graph(false);
+    g.addNode('Hub');
+    const rimNodes: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const name = String.fromCharCode(65 + i);
+      rimNodes.push(name);
+      g.addNode(name);
+      g.addEdge('Hub', name);
+    }
+    for (let i = 0; i < n; i++) {
+      g.addEdge(rimNodes[i], rimNodes[(i + 1) % n]);
+    }
+    return g;
+  }
+
+  static binaryTree(depth: number): Graph {
+    const g = new Graph(false);
+    const queue: Array<{ name: string; level: number }> = [{ name: '1', level: 0 }];
+    g.addNode('1');
+
+    let idx = 1;
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (current.level >= depth) continue;
+
+      const leftName = String(++idx);
+      const rightName = String(++idx);
+      g.addNode(leftName);
+      g.addNode(rightName);
+      g.addEdge(current.name, leftName);
+      g.addEdge(current.name, rightName);
+      queue.push({ name: leftName, level: current.level + 1 });
+      queue.push({ name: rightName, level: current.level + 1 });
+    }
+
+    return g;
+  }
+
+  static grid(rows: number, cols: number): Graph {
+    const g = new Graph(false);
+    const getName = (r: number, c: number) => `(${r},${c})`;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        g.addNode(getName(r, c));
+      }
+    }
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (c + 1 < cols) g.addEdge(getName(r, c), getName(r, c + 1));
+        if (r + 1 < rows) g.addEdge(getName(r, c), getName(r + 1, c));
+      }
+    }
+
+    return g;
+  }
+
+  static directedAcyclic(): Graph {
+    const g = new Graph(true);
+    const nodes = ['S', 'A', 'B', 'C', 'D', 'T'];
+    for (const n of nodes) g.addNode(n);
+    g.addEdge('S', 'A'); g.addEdge('S', 'B');
+    g.addEdge('A', 'C'); g.addEdge('A', 'D');
+    g.addEdge('B', 'D'); g.addEdge('C', 'T');
+    g.addEdge('D', 'T');
+    return g;
+  }
+
+  static directedCyclic(): Graph {
+    const g = new Graph(true);
+    const nodes = ['A', 'B', 'C', 'D', 'E'];
+    for (const n of nodes) g.addNode(n);
+    g.addEdge('A', 'B'); g.addEdge('B', 'C');
+    g.addEdge('C', 'D'); g.addEdge('D', 'B');
+    g.addEdge('D', 'E');
+    return g;
+  }
+
+  static disconnected(): Graph {
+    const g = new Graph(false);
+    g.addEdge('A', 'B'); g.addEdge('B', 'C'); g.addEdge('A', 'C');
+    g.addEdge('D', 'E'); g.addEdge('E', 'F');
+    g.addNode('G');
+    return g;
+  }
+}
