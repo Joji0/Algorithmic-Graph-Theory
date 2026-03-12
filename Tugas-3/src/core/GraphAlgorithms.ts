@@ -722,7 +722,23 @@ export class GraphAlgorithms {
         let bipartite = true;
         let conflictEdge: [string, string] | null = null;
 
-        for (let start = 0; start < graph.size && bipartite; start++) {
+        const preferredStarts: number[] = [];
+        const seenPreferred = new Set<number>();
+        if (startNode) {
+          try {
+            const id = graph.getId(startNode);
+            preferredStarts.push(id);
+            seenPreferred.add(id);
+          } catch {
+            // ignore invalid start node
+          }
+        }
+        for (let i = 0; i < graph.size; i++) {
+          if (!seenPreferred.has(i)) preferredStarts.push(i);
+        }
+
+        for (const start of preferredStarts) {
+          if (!bipartite) break;
           if (colorArr[start] !== -1) continue;
           colorArr[start] = 0;
           const bq: number[] = [start];

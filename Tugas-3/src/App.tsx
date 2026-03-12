@@ -78,7 +78,7 @@ const ALGORITHMS = [
   {
     id: 'bipartite', name: 'Bipartite Check', desc: 'Determine if the graph is bipartite',
     icon: Split, badge: 'Bipartite', cardClass: 'algo-card-bipartite',
-    needsStart: false, needsEnd: false, category: 'property',
+    needsStart: true, needsEnd: false, category: 'property',
   },
   {
     id: 'diameter', name: 'Graph Diameter', desc: 'Find the diameter of the graph',
