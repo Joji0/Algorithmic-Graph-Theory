@@ -24,7 +24,6 @@ export interface CycleResult {
 export interface DiameterResult {
   diameter: number;
   path: string[];
-  eccentricities: Map<string, number>;
 }
 
 export interface GirthResult {
@@ -270,11 +269,10 @@ export class GraphAlgorithms {
 
   static diameter(graph: Graph): DiameterResult {
     if (graph.isEmpty) {
-      return { diameter: 0, path: [], eccentricities: new Map() };
+      return { diameter: 0, path: [] };
     }
 
     const n = graph.size;
-    const eccentricities = new Map<string, number>();
     let maxDiameter = 0;
     let diameterPath: string[] = [];
 
@@ -304,8 +302,6 @@ export class GraphAlgorithms {
         }
       }
 
-      eccentricities.set(graph.getName(source), maxDist);
-
       if (maxDist > maxDiameter) {
         maxDiameter = maxDist;
         const path: string[] = [];
@@ -318,7 +314,7 @@ export class GraphAlgorithms {
       }
     }
 
-    return { diameter: maxDiameter, path: diameterPath, eccentricities };
+    return { diameter: maxDiameter, path: diameterPath };
   }
 
   static detectCycle(graph: Graph): CycleResult {
