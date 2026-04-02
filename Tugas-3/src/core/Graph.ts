@@ -1,18 +1,26 @@
 export class Graph {
   private directed_: boolean;
+  private weighted_: boolean;
   private id_: Map<string, number>;
   private name_: string[];
   private adjList_: number[][];
+  private edgeWeights_: Map<string, number>;
 
-  constructor(directed: boolean = false) {
+  constructor(directed: boolean = false, weighted: boolean = false) {
     this.directed_ = directed;
+    this.weighted_ = weighted;
     this.id_ = new Map();
     this.name_ = [];
     this.adjList_ = [];
+    this.edgeWeights_ = new Map();
   }
 
   get isDirected(): boolean {
     return this.directed_;
+  }
+
+  get isWeighted(): boolean {
+    return this.weighted_;
   }
 
   get size(): number {
@@ -76,7 +84,7 @@ export class Graph {
     this.adjList_.push([]);
   }
 
-  addEdge(from: string, to: string): void {
+  addEdge(from: string, to: string, weight: number = 1): void {
     this.addNode(from);
     this.addNode(to);
 
@@ -86,9 +94,13 @@ export class Graph {
     if (!this.adjList_[fromId].includes(toId)) {
       this.adjList_[fromId].push(toId);
     }
+    this.edgeWeights_.set(`${fromId}->${toId}`, weight);
 
-    if (!this.directed_ && !this.adjList_[toId].includes(fromId)) {
-      this.adjList_[toId].push(fromId);
+    if (!this.directed_) {
+      if (!this.adjList_[toId].includes(fromId)) {
+        this.adjList_[toId].push(fromId);
+      }
+      this.edgeWeights_.set(`${toId}->${fromId}`, weight);
     }
   }
 
@@ -124,14 +136,27 @@ export class Graph {
     const toId = this.id_.get(to)!;
 
     this.adjList_[fromId] = this.adjList_[fromId].filter((n) => n !== toId);
+    this.edgeWeights_.delete(`${fromId}->${toId}`);
 
     if (!this.directed_) {
       this.adjList_[toId] = this.adjList_[toId].filter((n) => n !== fromId);
+      this.edgeWeights_.delete(`${toId}->${fromId}`);
     }
   }
 
-  getEdges(): Array<[string, string]> {
-    const edges: Array<[string, string]> = [];
+  getWeight(from: string, to: string): number {
+    if (!this.id_.has(from) || !this.id_.has(to)) return Infinity;
+    const fromId = this.id_.get(from)!;
+    const toId = this.id_.get(to)!;
+    return this.edgeWeights_.get(`${fromId}->${toId}`) ?? Infinity;
+  }
+
+  getWeightById(fromId: number, toId: number): number {
+    return this.edgeWeights_.get(`${fromId}->${toId}`) ?? Infinity;
+  }
+
+  getEdges(): Array<[string, string, number]> {
+    const edges: Array<[string, string, number]> = [];
     const seen = new Set<string>();
 
     for (let i = 0; i < this.adjList_.length; i++) {
@@ -142,7 +167,11 @@ export class Graph {
 
         if (!seen.has(edgeKey)) {
           seen.add(edgeKey);
-          edges.push([this.name_[i], this.name_[neighbor]]);
+          edges.push([
+            this.name_[i],
+            this.name_[neighbor],
+            this.getWeightById(i, neighbor)
+          ]);
         }
       }
     }
@@ -161,12 +190,12 @@ export class Graph {
   }
 
   clone(): Graph {
-    const g = new Graph(this.directed_);
+    const g = new Graph(this.directed_, this.weighted_);
     for (const name of this.name_) {
       g.addNode(name);
     }
-    for (const [from, to] of this.getEdges()) {
-      g.addEdge(from, to);
+    for (const [from, to, weight] of this.getEdges()) {
+      g.addEdge(from, to, weight);
     }
     return g;
   }
@@ -175,23 +204,29 @@ export class Graph {
     this.id_.clear();
     this.name_ = [];
     this.adjList_ = [];
+    this.edgeWeights_.clear();
   }
 
   toJSON(): object {
     return {
       directed: this.directed_,
+      weighted: this.weighted_,
       nodes: [...this.name_],
       edges: this.getEdges(),
     };
   }
 
-  static fromJSON(data: { directed: boolean; nodes: string[]; edges: [string, string][] }): Graph {
-    const g = new Graph(data.directed);
+  static fromJSON(data: { directed: boolean; weighted?: boolean; nodes: string[]; edges: [string, string, number?][] }): Graph {
+    const isWeighted = data.weighted ?? false;
+    const g = new Graph(data.directed, isWeighted);
     for (const node of data.nodes) {
       g.addNode(node);
     }
-    for (const [from, to] of data.edges) {
-      g.addEdge(from, to);
+    for (const edge of data.edges) {
+      const from = edge[0];
+      const to = edge[1];
+      const weight = edge.length > 2 && edge[2] !== undefined ? edge[2] : 1;
+      g.addEdge(from, to, weight);
     }
     return g;
   }
