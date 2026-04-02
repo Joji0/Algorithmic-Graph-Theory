@@ -1,5 +1,50 @@
 import { Graph, Grid } from './Graph';
 
+class MinPriorityQueue<T> {
+  private heap: { value: T; priority: number }[] = [];
+
+  get size() { return this.heap.length; }
+
+  push(value: T, priority: number) {
+    this.heap.push({ value, priority });
+    this.bubbleUp(this.heap.length - 1);
+  }
+
+  pop(): { value: T; priority: number } | undefined {
+    if (this.heap.length === 0) return undefined;
+    const top = this.heap[0];
+    const last = this.heap.pop()!;
+    if (this.heap.length > 0) {
+      this.heap[0] = last;
+      this.sinkDown(0);
+    }
+    return top;
+  }
+
+  private bubbleUp(i: number) {
+    while (i > 0) {
+      const parent = (i - 1) >> 1;
+      if (this.heap[i].priority >= this.heap[parent].priority) break;
+      [this.heap[i], this.heap[parent]] = [this.heap[parent], this.heap[i]];
+      i = parent;
+    }
+  }
+
+  private sinkDown(i: number) {
+    const n = this.heap.length;
+    while (true) {
+      let smallest = i;
+      const left = 2 * i + 1;
+      const right = 2 * i + 2;
+      if (left < n && this.heap[left].priority < this.heap[smallest].priority) smallest = left;
+      if (right < n && this.heap[right].priority < this.heap[smallest].priority) smallest = right;
+      if (smallest === i) break;
+      [this.heap[i], this.heap[smallest]] = [this.heap[smallest], this.heap[i]];
+      i = smallest;
+    }
+  }
+}
+
 export interface TraversalResult {
   order: string[];
   visited: Set<string>;
@@ -472,44 +517,34 @@ export class GraphAlgorithms {
     const distances = new Map<string, number>();
     const previous = new Map<string, string | null>();
     const visited = new Set<string>();
+    const pq = new MinPriorityQueue<string>();
 
-    // Initialize distances
     for (const name of graph.nodeNames) {
       distances.set(name, Infinity);
       previous.set(name, null);
     }
     distances.set(startName, 0);
+    pq.push(startName, 0);
 
-    const n = graph.size;
-    while (visited.size < n) {
-      let currentName: string | null = null;
-      let minDistance = Infinity;
+    while (pq.size > 0) {
+      const { value: currentName, priority: currentDist } = pq.pop()!;
 
-      // Find the unvisited node with the smallest distance
-      for (const name of graph.nodeNames) {
-        if (!visited.has(name)) {
-          const dist = distances.get(name)!;
-          if (dist < minDistance) {
-            minDistance = dist;
-            currentName = name;
-          }
-        }
-      }
-
-      if (currentName === null || minDistance === Infinity) break;
-
+      if (visited.has(currentName)) continue;
       visited.add(currentName);
+
+      if (currentDist > distances.get(currentName)!) continue;
+
       const currentId = graph.getId(currentName);
 
-      // Update distances to neighbors
       for (const neighborId of graph.getAdjList(currentId)) {
         const neighborName = graph.getName(neighborId);
         if (!visited.has(neighborName)) {
           const weight = graph.isWeighted ? graph.getWeightById(currentId, neighborId) : 1;
-          const tentativeDistance = distances.get(currentName)! + weight;
+          const tentativeDistance = currentDist + weight;
           if (tentativeDistance < distances.get(neighborName)!) {
             distances.set(neighborName, tentativeDistance);
             previous.set(neighborName, currentName);
+            pq.push(neighborName, tentativeDistance);
           }
         }
       }
@@ -571,15 +606,15 @@ export class GraphAlgorithms {
       return false;
     };
 
-    const edges = graph.getEdges(); 
+    const edges = graph.getEdges();
     if (graph.isWeighted) {
       edges.sort((a, b) => a[2] - b[2]); // Sort by weight
     }
-    
+
     for (const [uName, vName] of edges) {
       const u = graph.getId(uName);
       const v = graph.getId(vName);
-      
+
       if (union(u, v)) {
         mstEdges.push([uName, vName]);
         if (mstEdges.length === graph.size - 1) break;
@@ -1102,42 +1137,42 @@ export class GraphAlgorithms {
         }
         break;
       }
-      
+
       /* --------- DJIKSTRA --------- */
       case 'djikstra': {
         if (!startNode || graph.isEmpty) break;
         steps.push({ type: 'highlight-node', nodes: [startNode], color: '#facc15', message: `Start Djikstra from ${startNode}`, delay: 400 });
-        
+
         const distances = new Map<string, number>();
         const previous = new Map<string, string | null>();
         const visited = new Set<string>();
+        const pq = new MinPriorityQueue<string>();
 
         for (const name of graph.nodeNames) {
           distances.set(name, Infinity);
           previous.set(name, null);
         }
         distances.set(startNode, 0);
+        pq.push(startNode, 0);
 
-        const n = graph.size;
-        
-        while (visited.size < n) {
-          let currentName: string | null = null;
-          let minDistance = Infinity;
+        const allVisited: string[] = [];
 
-          for (const name of graph.nodeNames) {
-            if (!visited.has(name) && distances.get(name)! < minDistance) {
-              minDistance = distances.get(name)!;
-              currentName = name;
-            }
-          }
+        while (pq.size > 0) {
+          const { value: currentName, priority: currentDist } = pq.pop()!;
 
-          if (currentName === null || minDistance === Infinity) break;
+          if (visited.has(currentName)) continue;
+          if (currentDist > distances.get(currentName)!) continue;
 
           visited.add(currentName);
-          steps.push({ type: 'visit', nodes: [currentName], color: '#facc15', message: `Current Node: ${currentName} (Dist: ${minDistance === Infinity ? '∞' : minDistance})`, delay: 300 });
+          allVisited.push(currentName);
+
+          // Highlight current node being processed (bright yellow)
+          steps.push({ type: 'visit', nodes: [currentName], color: '#facc15', message: `Dequeue ${currentName} from PQ (Dist: ${currentDist === Infinity ? '∞' : currentDist})`, delay: 300 });
 
           if (endNode && currentName === endNode) {
-              break; 
+            // Fade current to visited before breaking
+            steps.push({ type: 'color-node', nodes: [currentName], color: '#64748b', message: '', delay: 50 });
+            break;
           }
 
           const currentId = graph.getId(currentName);
@@ -1146,47 +1181,72 @@ export class GraphAlgorithms {
             const neighborName = graph.getName(neighborId);
             if (!visited.has(neighborName)) {
               const weight = graph.isWeighted ? graph.getWeightById(currentId, neighborId) : 1;
-              const tentative = minDistance + weight;
-              
-              steps.push({ type: 'highlight-edge', edges: [[currentName, neighborName]], color: '#fef08a', message: `Checking edge ${currentName} → ${neighborName} (Weight: ${weight})`, delay: 150 });
-              
+              const tentative = currentDist + weight;
+
+              steps.push({ type: 'highlight-edge', edges: [[currentName, neighborName]], color: '#94a3b8', message: `Checking edge ${currentName} → ${neighborName} (Weight: ${weight})`, delay: 150 });
+
               if (tentative < distances.get(neighborName)!) {
                  distances.set(neighborName, tentative);
                  previous.set(neighborName, currentName);
-                 steps.push({ type: 'visit', nodes: [neighborName], color: '#fde047', message: `Updating distance to ${neighborName}: ${tentative}`, delay: 150 });
+                 pq.push(neighborName, tentative);
+                 // Neighbor gets a "queued" color (light blue)
+                 steps.push({ type: 'visit', nodes: [neighborName], color: '#38bdf8', message: `Update dist ${neighborName}: ${tentative}, enqueue to PQ`, delay: 150 });
               }
             }
           }
+
+          // Fade current node to muted after processing (slate gray)
+          steps.push({ type: 'color-node', nodes: [currentName], color: '#64748b', message: '', delay: 50 });
         }
 
-        if (endNode && distances.get(endNode)! !== Infinity) {
+        // Dim all visited nodes
+        steps.push({ type: 'color-node', nodes: allVisited, color: '#334155', message: 'Dimming explored nodes...', delay: 200 });
+
+        if (endNode) {
+          // --- With end node: highlight shortest path ---
+          if (distances.get(endNode)! !== Infinity) {
              const pathEdges: Array<[string, string]> = [];
              const pathNodes: string[] = [];
              let curr: string | null = endNode;
              while (curr !== null) {
                 pathNodes.push(curr);
-                const prev = previous.get(curr) || null;
-                if (prev) {
-                    pathEdges.push([prev, curr]);
-                }
+                const prev: string | null = previous.get(curr) ?? null;
+                if (prev) pathEdges.push([prev, curr]);
                 curr = prev;
              }
              pathNodes.reverse();
              pathEdges.reverse();
 
-             steps.push({ type: 'highlight-node', nodes: pathNodes, color: '#eab308', message: `Shortest Path Found: ${pathNodes.join(' → ')}`, delay: 300 });
-             for (const edge of pathEdges) {
-                 steps.push({ type: 'highlight-edge', edges: [edge], color: '#a16207', message: `Path edge: ${edge[0]} → ${edge[1]}`, delay: 150 });
-             }
+             steps.push({ type: 'highlight-node', nodes: pathNodes, color: '#22c55e', message: `Shortest Path: ${pathNodes.join(' → ')} (Dist: ${distances.get(endNode)})`, delay: 400 });
+             steps.push({ type: 'highlight-edge', edges: pathEdges, color: '#16a34a', message: `Path length: ${pathEdges.length} edges`, delay: 300 });
+          } else {
+             steps.push({ type: 'highlight-node', nodes: [startNode], color: '#ef4444', message: `No path found to ${endNode}`, delay: 400 });
+          }
+        } else {
+          // --- No end node: highlight shortest path tree ---
+          const treeEdges: Array<[string, string]> = [];
+          const reachableNodes: string[] = [];
+          for (const [node, prev] of previous.entries()) {
+            if (prev !== null) {
+              treeEdges.push([prev, node]);
+              reachableNodes.push(node);
+            }
+          }
+          reachableNodes.push(startNode);
+
+          steps.push({ type: 'highlight-node', nodes: reachableNodes, color: '#22c55e', message: `Shortest path tree from ${startNode} (${reachableNodes.length} nodes)`, delay: 400 });
+          if (treeEdges.length > 0) {
+            steps.push({ type: 'highlight-edge', edges: treeEdges, color: '#16a34a', message: `Tree edges: ${treeEdges.length}`, delay: 300 });
+          }
         }
         break;
       }
-      
+
       /* --------- PRIMS --------- */
       case 'prims': {
         if (!startNode || graph.isEmpty) break;
         steps.push({ type: 'highlight-node', nodes: [startNode], color: '#14b8a6', message: `Start Prim's MST from ${startNode}`, delay: 400 });
-        
+
         const mstEdges = this.prims(graph, startNode);
         for (const [u, v] of mstEdges) {
           steps.push({ type: 'highlight-edge', edges: [[u,v]], color: '#0f766e', message: `MST Edge: ${u} - ${v}`, delay: 250 });
@@ -1194,12 +1254,12 @@ export class GraphAlgorithms {
         }
         break;
       }
-      
+
       /* --------- KRUSKAL --------- */
       case 'kruskal': {
         if (graph.isEmpty) break;
         steps.push({ type: 'highlight-node', nodes: graph.nodeNames, color: '#6366f1', message: `Calculate Kruskal's MST`, delay: 400 });
-        
+
         const mstEdges = this.kruskal(graph);
         for (const [u, v] of mstEdges) {
           steps.push({ type: 'highlight-edge', edges: [[u,v]], color: '#4338ca', message: `Selected Edge: ${u} - ${v}`, delay: 250 });
