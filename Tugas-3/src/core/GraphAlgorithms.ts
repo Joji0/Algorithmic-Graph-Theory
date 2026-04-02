@@ -468,6 +468,125 @@ export class GraphAlgorithms {
     };
   }
 
+  static djikstra(graph: Graph, startName: string): Map<string, number> {
+    const distances = new Map<string, number>();
+    const visited = new Set<string>();
+
+    // Initialize distances
+    for (const name of graph.nodeNames) {
+      distances.set(name, Infinity);
+    }
+    distances.set(startName, 0);
+
+    const n = graph.size;
+    while (visited.size < n) {
+      let currentName: string | null = null;
+      let minDistance = Infinity;
+
+      // Find the unvisited node with the smallest distance
+      for (const name of graph.nodeNames) {
+        if (!visited.has(name)) {
+          const dist = distances.get(name)!;
+          if (dist < minDistance) {
+            minDistance = dist;
+            currentName = name;
+          }
+        }
+      }
+
+      if (currentName === null || minDistance === Infinity) break;
+
+      visited.add(currentName);
+      const currentId = graph.getId(currentName);
+
+      // Update distances to neighbors
+      for (const neighborId of graph.getAdjList(currentId)) {
+        const neighborName = graph.getName(neighborId);
+        if (!visited.has(neighborName)) {
+          const weight = graph.isWeighted ? graph.getWeightById(currentId, neighborId) : 1;
+          const tentativeDistance = distances.get(currentName)! + weight;
+          if (tentativeDistance < distances.get(neighborName)!) {
+            distances.set(neighborName, tentativeDistance);
+          }
+        }
+      }
+    }
+
+    return distances;
+  }
+
+  static prims(graph: Graph, startName: string): Array<[string, string]> {
+    const mstEdges: Array<[string, string]> = [];
+    const visited = new Set<number>();
+    const startId = graph.getId(startName);
+
+    visited.add(startId);
+
+    while (visited.size < graph.size) {
+      let minEdge: [number, number] | null = null;
+      let minWeight = Infinity;
+
+      for (const u of visited) {
+        for (const v of graph.getAdjList(u)) {
+          if (!visited.has(v)) {
+            const weight = graph.isWeighted ? graph.getWeightById(u, v) : 1;
+            if (weight < minWeight) {
+              minWeight = weight;
+              minEdge = [u, v];
+            }
+          }
+        }
+      }
+
+      if (minEdge) {
+        mstEdges.push([graph.getName(minEdge[0]), graph.getName(minEdge[1])]);
+        visited.add(minEdge[1]);
+      } else {
+        break; // Disconnected component
+      }
+    }
+
+    return mstEdges;
+  }
+
+  static kruskal(graph: Graph): Array<[string, string]> {
+    const mstEdges: Array<[string, string]> = [];
+    const parent = new Array<number>(graph.size).fill(0).map((_, i) => i);
+
+    const find = (i: number): number => {
+      if (parent[i] === i) return i;
+      return parent[i] = find(parent[i]);
+    };
+
+    const union = (i: number, j: number): boolean => {
+      const rootI = find(i);
+      const rootJ = find(j);
+      if (rootI !== rootJ) {
+        parent[rootI] = rootJ;
+        return true;
+      }
+      return false;
+    };
+
+    const edges = graph.getEdges(); 
+    if (graph.isWeighted) {
+      edges.sort((a, b) => a[2] - b[2]); // Sort by weight
+    }
+    
+    for (const [uName, vName] of edges) {
+      const u = graph.getId(uName);
+      const v = graph.getId(vName);
+      
+      if (union(u, v)) {
+        mstEdges.push([uName, vName]);
+        if (mstEdges.length === graph.size - 1) break;
+      }
+    }
+
+    return mstEdges;
+  }
+
+
   static findIslandCount(grid: Grid): number {
     let islands = 0;
     const visited = new Array<boolean>(grid.size).fill(false);
