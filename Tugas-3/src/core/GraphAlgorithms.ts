@@ -468,13 +468,15 @@ export class GraphAlgorithms {
     };
   }
 
-  static djikstra(graph: Graph, startName: string): Map<string, number> {
+  static djikstra(graph: Graph, startName: string): { distances: Map<string, number>, previous: Map<string, string | null> } {
     const distances = new Map<string, number>();
+    const previous = new Map<string, string | null>();
     const visited = new Set<string>();
 
     // Initialize distances
     for (const name of graph.nodeNames) {
       distances.set(name, Infinity);
+      previous.set(name, null);
     }
     distances.set(startName, 0);
 
@@ -507,12 +509,13 @@ export class GraphAlgorithms {
           const tentativeDistance = distances.get(currentName)! + weight;
           if (tentativeDistance < distances.get(neighborName)!) {
             distances.set(neighborName, tentativeDistance);
+            previous.set(neighborName, currentName);
           }
         }
       }
     }
 
-    return distances;
+    return { distances, previous };
   }
 
   static prims(graph: Graph, startName: string): Array<[string, string]> {
@@ -1105,11 +1108,76 @@ export class GraphAlgorithms {
         if (!startNode || graph.isEmpty) break;
         steps.push({ type: 'highlight-node', nodes: [startNode], color: '#facc15', message: `Start Djikstra from ${startNode}`, delay: 400 });
         
-        const distances = this.djikstra(graph, startNode);
-        for (const [node, dist] of distances.entries()) {
-          if (dist !== Infinity && node !== startNode) {
-             steps.push({ type: 'visit', nodes: [node], color: '#eab308', message: `Distance to ${node}: ${dist}`, delay: 200 });
+        const distances = new Map<string, number>();
+        const previous = new Map<string, string | null>();
+        const visited = new Set<string>();
+
+        for (const name of graph.nodeNames) {
+          distances.set(name, Infinity);
+          previous.set(name, null);
+        }
+        distances.set(startNode, 0);
+
+        const n = graph.size;
+        
+        while (visited.size < n) {
+          let currentName: string | null = null;
+          let minDistance = Infinity;
+
+          for (const name of graph.nodeNames) {
+            if (!visited.has(name) && distances.get(name)! < minDistance) {
+              minDistance = distances.get(name)!;
+              currentName = name;
+            }
           }
+
+          if (currentName === null || minDistance === Infinity) break;
+
+          visited.add(currentName);
+          steps.push({ type: 'visit', nodes: [currentName], color: '#facc15', message: `Current Node: ${currentName} (Dist: ${minDistance === Infinity ? '∞' : minDistance})`, delay: 300 });
+
+          if (endNode && currentName === endNode) {
+              break; 
+          }
+
+          const currentId = graph.getId(currentName);
+
+          for (const neighborId of graph.getAdjList(currentId)) {
+            const neighborName = graph.getName(neighborId);
+            if (!visited.has(neighborName)) {
+              const weight = graph.isWeighted ? graph.getWeightById(currentId, neighborId) : 1;
+              const tentative = minDistance + weight;
+              
+              steps.push({ type: 'highlight-edge', edges: [[currentName, neighborName]], color: '#fef08a', message: `Checking edge ${currentName} → ${neighborName} (Weight: ${weight})`, delay: 150 });
+              
+              if (tentative < distances.get(neighborName)!) {
+                 distances.set(neighborName, tentative);
+                 previous.set(neighborName, currentName);
+                 steps.push({ type: 'visit', nodes: [neighborName], color: '#fde047', message: `Updating distance to ${neighborName}: ${tentative}`, delay: 150 });
+              }
+            }
+          }
+        }
+
+        if (endNode && distances.get(endNode)! !== Infinity) {
+             const pathEdges: Array<[string, string]> = [];
+             const pathNodes: string[] = [];
+             let curr: string | null = endNode;
+             while (curr !== null) {
+                pathNodes.push(curr);
+                const prev = previous.get(curr) || null;
+                if (prev) {
+                    pathEdges.push([prev, curr]);
+                }
+                curr = prev;
+             }
+             pathNodes.reverse();
+             pathEdges.reverse();
+
+             steps.push({ type: 'highlight-node', nodes: pathNodes, color: '#eab308', message: `Shortest Path Found: ${pathNodes.join(' → ')}`, delay: 300 });
+             for (const edge of pathEdges) {
+                 steps.push({ type: 'highlight-edge', edges: [edge], color: '#a16207', message: `Path edge: ${edge[0]} → ${edge[1]}`, delay: 150 });
+             }
         }
         break;
       }

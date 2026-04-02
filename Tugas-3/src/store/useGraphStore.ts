@@ -405,10 +405,26 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         case 'djikstra': {
           if (!startNode) return;
           const result = GraphAlgorithms.djikstra(graph, startNode);
-          resultMessage = endNode 
-            ? `Distance to ${endNode}: ${result.get(endNode) === Infinity ? 'Unreachable' : result.get(endNode)}`
-            : `Shortest paths from ${startNode} computed`;
-          details = Array.from(result.entries()).map(([node, dist]) => `${node}: ${dist === Infinity ? '∞' : dist}`);
+          
+          if (endNode) {
+            const dist = result.distances.get(endNode);
+            resultMessage = `Distance to ${endNode}: ${dist === Infinity ? 'Unreachable' : dist}`;
+            if (dist !== Infinity) {
+              const path = [];
+              let curr: string | null = endNode;
+              while (curr !== null) {
+                path.push(curr);
+                curr = result.previous.get(curr) || null;
+              }
+              path.reverse();
+              details = [`Path: ${path.join(' → ')}`, `Total distance: ${dist}`];
+            } else {
+              details = ['The target node is unreachable from the start node.'];
+            }
+          } else {
+            resultMessage = `Shortest paths from ${startNode}`;
+            details = Array.from(result.distances.entries()).map(([node, dist]) => `${node}: ${dist === Infinity ? '∞' : dist}`);
+          }
           break;
         }
         case 'prims': {

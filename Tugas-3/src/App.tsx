@@ -98,7 +98,7 @@ const ALGORITHMS = [
   {
     id: 'djikstra', name: 'Djikstra', desc: 'Find shortest paths from a start node',
     icon: Route, badge: 'Shortest Path', cardClass: 'algo-card-path',
-    needsStart: true, needsEnd: false, category: 'weighted',
+    needsStart: true, needsEnd: 'optional', category: 'weighted',
   },
   {
     id: 'prims', name: "Prim's Algorithm", desc: 'Find Minimum Spanning Tree starting from a node',
@@ -671,12 +671,12 @@ function RightPanel() {
 
     if (graph.isEmpty) return;
     if (algo.needsStart && !startNode) return;
-    if (algo.needsEnd && !endNode) return;
+    if (algo.needsEnd === true && !endNode) return;
 
     runAlgorithm(
       selectedAlgo,
       algo.needsStart ? startNode : undefined,
-      algo.needsEnd ? endNode : undefined
+      (algo.needsEnd === true || algo.needsEnd === 'optional') ? endNode : undefined
     );
     setActiveTab('results');
   }, [selectedAlgo, startNode, endNode, runAlgorithm, isAnimating, graph, gridRows, gridCols, gridInput, setGridGraph]);
@@ -831,15 +831,15 @@ function RightPanel() {
                                     </select>
                                   </div>
                                 )}
-                                {algo.needsEnd && (
+                                {(algo.needsEnd === true || algo.needsEnd === 'optional') && (
                                   <div className="space-y-1">
-                                    <label className="text-[10px] text-gray-500 uppercase tracking-wider">End Node</label>
+                                    <label className="text-[10px] text-gray-500 uppercase tracking-wider">{algo.needsEnd === 'optional' ? 'End Node (Optional)' : 'End Node'}</label>
                                     <select
                                       value={endNode}
                                       onChange={(e) => setEndNode(e.target.value)}
                                       className="select-field"
                                     >
-                                      <option value="">Select end node</option>
+                                      <option value="">{algo.needsEnd === 'optional' ? 'To all nodes' : 'Select end node'}</option>
                                       {graph.nodeNames.map((n) => (
                                         <option key={n} value={n}>{n}</option>
                                       ))}
@@ -865,7 +865,7 @@ function RightPanel() {
 
                                 <button
                                   onClick={handleRun}
-                                  disabled={isAnimating || graph.isEmpty || (algo.needsStart && !startNode) || (algo.needsEnd && !endNode)}
+                                  disabled={isAnimating || graph.isEmpty || (algo.needsStart && !startNode) || (algo.needsEnd === true && !endNode)}
                                   className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   <Play className="w-3.5 h-3.5" />
