@@ -128,9 +128,10 @@ interface Edge3DProps {
   color: string;
   isDirected: boolean;
   opacity?: number;
+  weight?: number;
 }
 
-function Edge3D({ from, to, color, isDirected, opacity = 0.75 }: Edge3DProps) {
+function Edge3D({ from, to, color, isDirected, opacity = 0.75, weight }: Edge3DProps) {
   const edgeColor = useMemo(() => new THREE.Color(color), [color]);
 
   const { points, length, midpoint, quaternion } = useMemo(() => {
@@ -168,6 +169,20 @@ function Edge3D({ from, to, color, isDirected, opacity = 0.75 }: Edge3DProps) {
 
       {isDirected && (
         <ArrowHead from={from} to={to} color={color} opacity={opacity} />
+      )}
+
+      {weight !== undefined && (
+        <Text
+          position={[midpoint.x, midpoint.y + 0.25, midpoint.z]}
+          fontSize={0.28}
+          color="#f8fafc"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.03}
+          outlineColor="#0f172a"
+        >
+          {weight.toString()}
+        </Text>
       )}
     </group>
   );
@@ -208,7 +223,7 @@ function ArrowHead({ from, to, color, opacity = 0.6 }: { from: [number, number, 
 
   return (
     <mesh position={position} quaternion={quaternion}>
-      <coneGeometry args={[0.08, 0.2, 8]} />
+      <coneGeometry args={[0.15, 0.35, 12]} />
       <meshBasicMaterial color={color} transparent opacity={opacity} />
     </mesh>
   );
@@ -238,6 +253,7 @@ export default function GraphCanvas3D() {
   const hoveredNode = useGraphStore((s) => s.hoveredNode);
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
   const setHoveredNode = useGraphStore((s) => s.setHoveredNode);
+  const showEdgeWeights = useGraphStore((s) => s.showEdgeWeights);
 
   const defaultNodeColor = '#00f0ff';
   const defaultEdgeColor = '#334155';
@@ -298,6 +314,9 @@ export default function GraphCanvas3D() {
           const toPos = positions.get(to);
           if (!fromPos || !toPos) return null;
 
+          let weight = graph.isWeighted && showEdgeWeights ? graph.getWeight(from, to) : undefined;
+          if (weight === Infinity) weight = undefined;
+
           return (
             <Edge3D
               key={`edge-${idx}-${from}-${to}`}
@@ -306,6 +325,7 @@ export default function GraphCanvas3D() {
               color={getEdgeColor(from, to)}
               isDirected={graph.isDirected}
               opacity={getEdgeOpacity(from, to)}
+              weight={weight}
             />
           );
         })}

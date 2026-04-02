@@ -12,6 +12,7 @@ export default function GraphCanvas2D() {
   const hoveredNode = useGraphStore((s) => s.hoveredNode);
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
   const setHoveredNode = useGraphStore((s) => s.setHoveredNode);
+  const showEdgeWeights = useGraphStore((s) => s.showEdgeWeights);
 
   const panRef = useRef({ x: 0, y: 0 });
   const zoomRef = useRef(30);
@@ -109,14 +110,35 @@ export default function GraphCanvas2D() {
           const nodeR = 12;
           const ax = ts.x - nx * nodeR;
           const ay = ts.y - ny * nodeR;
-          const arrowSize = 8;
+          const arrowSize = 14;
           ctx.fillStyle = eColor || 'rgba(100,116,139,0.4)';
           ctx.beginPath();
           ctx.moveTo(ax, ay);
-          ctx.lineTo(ax - nx * arrowSize + ny * arrowSize * 0.4, ay - ny * arrowSize - nx * arrowSize * 0.4);
-          ctx.lineTo(ax - nx * arrowSize - ny * arrowSize * 0.4, ay - ny * arrowSize + nx * arrowSize * 0.4);
+          ctx.lineTo(ax - nx * arrowSize + ny * arrowSize * 0.5, ay - ny * arrowSize - nx * arrowSize * 0.5);
+          ctx.lineTo(ax - nx * arrowSize - ny * arrowSize * 0.5, ay - ny * arrowSize + nx * arrowSize * 0.5);
           ctx.closePath();
           ctx.fill();
+        }
+      }
+
+      if (graph.isWeighted && showEdgeWeights) {
+        const weight = graph.getWeight(from, to);
+        if (weight !== undefined && weight !== Infinity) {
+          const mx = (fs.x + ts.x) / 2;
+          const my = (fs.y + ts.y) / 2;
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.arc(mx, my, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '500 10px Inter, system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(weight.toString(), mx, my);
         }
       }
     }
@@ -172,7 +194,7 @@ export default function GraphCanvas2D() {
       ctx.textBaseline = 'bottom';
       ctx.fillText(name, s.x, s.y - radius - 4);
     }
-  }, [graph, positions, nodeColors, edgeColors, selectedNode, hoveredNode, worldToScreen]);
+  }, [graph, positions, nodeColors, edgeColors, selectedNode, hoveredNode, showEdgeWeights, worldToScreen]);
 
   useEffect(() => {
     const container = containerRef.current;

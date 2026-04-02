@@ -97,17 +97,17 @@ const ALGORITHMS = [
   },
   {
     id: 'djikstra', name: 'Djikstra', desc: 'Find shortest paths from a start node',
-    icon: Route, badge: 'Weighted', cardClass: 'algo-card-path',
+    icon: Route, badge: 'Shortest Path', cardClass: 'algo-card-path',
     needsStart: true, needsEnd: false, category: 'weighted',
   },
   {
-    id: 'prims', name: "Prim's MST", desc: 'Find Minimum Spanning Tree starting from a node',
-    icon: GitBranch, badge: 'Weighted', cardClass: 'algo-card-components',
+    id: 'prims', name: "Prim's Algorithm", desc: 'Find Minimum Spanning Tree starting from a node',
+    icon: GitBranch, badge: 'MST', cardClass: 'algo-card-components',
     needsStart: true, needsEnd: false, category: 'weighted',
   },
   {
-    id: 'kruskal', name: "Kruskal's MST", desc: 'Find Minimum Spanning Tree of the whole graph',
-    icon: Network, badge: 'Weighted', cardClass: 'algo-card-connectivity',
+    id: 'kruskal', name: "Kruskal's Algorithm", desc: 'Find Minimum Spanning Tree of the whole graph',
+    icon: Network, badge: 'MST', cardClass: 'algo-card-connectivity',
     needsStart: false, needsEnd: false, category: 'weighted',
   },
 ];
@@ -131,6 +131,8 @@ function Header() {
   const graphMode = useGraphStore((s) => s.graphMode);
   const setGraphMode = useGraphStore((s) => s.setGraphMode);
   const islandGrid = useGraphStore((s) => s.islandGrid);
+  const showEdgeWeights = useGraphStore((s) => s.showEdgeWeights);
+  const setShowEdgeWeights = useGraphStore((s) => s.setShowEdgeWeights);
 
   return (
     <header className="absolute top-0 left-0 right-0 z-30 h-14">
@@ -171,6 +173,21 @@ function Header() {
               <Grid3x3 className="w-3 h-3 inline mr-1" />Island
             </button>
           </div>
+
+          {graph.isWeighted && graphMode !== 'island' && (
+            <div className="flex items-center gap-1 stat-card !p-0.5 px-2">
+              <input
+                type="checkbox"
+                id="show-weights"
+                checked={showEdgeWeights}
+                onChange={(e) => setShowEdgeWeights(e.target.checked)}
+                className="w-3 h-3 accent-neon-purple rounded cursor-pointer"
+              />
+              <label htmlFor="show-weights" className="text-xs text-gray-500 font-medium cursor-pointer hover:text-gray-300 select-none">
+                Weights
+              </label>
+            </div>
+          )}
 
           {/* Stats */}
           {graphMode !== 'island' ? (

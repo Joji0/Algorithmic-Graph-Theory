@@ -72,6 +72,7 @@ interface GraphState {
   islandAnimationIndex: number;
   isIslandAnimating: boolean;
   islandAnimationSpeed: number;
+  showEdgeWeights: boolean;
 
   setGraph: (graph: Graph) => void;
   loadPreset: (name: string) => void;
@@ -99,6 +100,7 @@ interface GraphState {
   setViewMode: (mode: '2d' | '3d') => void;
   setGridGraph: (grid: Grid | null) => void;
   setGraphWeighted: (weighted: boolean) => void;
+  setShowEdgeWeights: (show: boolean) => void;
   setGraphMode: (mode: 'undirected' | 'directed' | 'island') => void;
   setIslandGrid: (rows: number, cols: number) => void;
   toggleIslandCell: (row: number, col: number) => void;
@@ -165,6 +167,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   animationSpeed: 1,
   viewMode: '3d',
   graphMode: 'undirected',
+  showEdgeWeights: true,
   ...buildEmptyIslandState(initialGrid),
 
   setGraph: (graph: Graph) => {
@@ -487,6 +490,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   setViewMode: (mode: '2d' | '3d') => set({ viewMode: mode }),
 
   setGridGraph: (grid: Grid | null) => set({ gridGraph: grid }),
+
+  setShowEdgeWeights: (show: boolean) => set({ showEdgeWeights: show }),
 
   setGraphWeighted: (weighted: boolean) => {
     const { graph } = get();
