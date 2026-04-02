@@ -430,19 +430,25 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         case 'prims': {
           if (!startNode) return;
           const result = GraphAlgorithms.prims(graph, startNode);
-          resultMessage = `Prim's MST built from ${startNode}`;
+          const isComplete = graph.size > 0 && result.length === graph.size - 1;
+          resultMessage = isComplete ? `Prim's MST built from ${startNode}` : `Prim's MST (Partial) from ${startNode}`;
           details = [
+            `MST formed: ${isComplete ? 'Yes' : 'No (Disconnected Graph)'}`,
             `Total edges: ${result.length}`, 
-            ...result.map(([u, v]) => `${u} - ${v}`)
+            `Total weight: ${result.reduce((sum, [u, v, weight]) => sum + (weight || 0), 0)}`,
+            ...result.map(([u, v, weight]) => `${u} - ${v} (Weight: ${weight})`)
           ];
           break;
         }
         case 'kruskal': {
           const result = GraphAlgorithms.kruskal(graph);
-          resultMessage = `Kruskal's MST computed`;
+          const isComplete = graph.size > 0 && result.length === graph.size - 1;
+          resultMessage = isComplete ? `Kruskal's MST computed` : `Kruskal's Spanning Forest computed`;
           details = [
+            `MST formed: ${isComplete ? 'Yes' : 'No (Disconnected Graph)'}`,
             `Total edges: ${result.length}`, 
-            ...result.map(([u, v]) => `${u} - ${v}`)
+            `Total weight: ${result.reduce((sum, [u, v, weight]) => sum + (weight || 0), 0)}`,
+            ...result.map(([u, v, weight]) => `${u} - ${v} (Weight: ${weight})`)
           ];
           break;
         }

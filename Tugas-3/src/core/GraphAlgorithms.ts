@@ -553,8 +553,8 @@ export class GraphAlgorithms {
     return { distances, previous };
   }
 
-  static prims(graph: Graph, startName: string): Array<[string, string]> {
-    const mstEdges: Array<[string, string]> = [];
+  static prims(graph: Graph, startName: string): Array<[string, string, number]> {
+    const mstEdges: Array<[string, string, number]> = [];
     const visited = new Set<number>();
     const startId = graph.getId(startName);
 
@@ -577,7 +577,8 @@ export class GraphAlgorithms {
       }
 
       if (minEdge) {
-        mstEdges.push([graph.getName(minEdge[0]), graph.getName(minEdge[1])]);
+        const weight = graph.isWeighted ? graph.getWeightById(minEdge[0], minEdge[1]) : 1;
+        mstEdges.push([graph.getName(minEdge[0]), graph.getName(minEdge[1]), weight]);
         visited.add(minEdge[1]);
       } else {
         break; // Disconnected component
@@ -587,8 +588,8 @@ export class GraphAlgorithms {
     return mstEdges;
   }
 
-  static kruskal(graph: Graph): Array<[string, string]> {
-    const mstEdges: Array<[string, string]> = [];
+  static kruskal(graph: Graph): Array<[string, string, number]> {
+    const mstEdges: Array<[string, string, number]> = [];
     const parent = new Array<number>(graph.size).fill(0).map((_, i) => i);
 
     const find = (i: number): number => {
@@ -616,7 +617,8 @@ export class GraphAlgorithms {
       const v = graph.getId(vName);
 
       if (union(u, v)) {
-        mstEdges.push([uName, vName]);
+        const weight = graph.isWeighted ? graph.getWeight(uName, vName) : 1;
+        mstEdges.push([uName, vName, weight]);
         if (mstEdges.length === graph.size - 1) break;
       }
     }
