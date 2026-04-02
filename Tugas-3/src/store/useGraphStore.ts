@@ -76,7 +76,7 @@ interface GraphState {
   setGraph: (graph: Graph) => void;
   loadPreset: (name: string) => void;
   addNode: (name: string) => void;
-  addEdge: (from: string, to: string) => void;
+  addEdge: (from: string, to: string, weight?: number) => void;
   removeNode: (name: string) => void;
   removeEdge: (from: string, to: string) => void;
   clearGraph: () => void;
@@ -98,6 +98,7 @@ interface GraphState {
   setAnimationSpeed: (speed: number) => void;
   setViewMode: (mode: '2d' | '3d') => void;
   setGridGraph: (grid: Grid | null) => void;
+  setGraphWeighted: (weighted: boolean) => void;
   setGraphMode: (mode: 'undirected' | 'directed' | 'island') => void;
   setIslandGrid: (rows: number, cols: number) => void;
   toggleIslandCell: (row: number, col: number) => void;
@@ -208,11 +209,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     set({ graph: graph.clone(), positions: newPositions });
   },
 
-  addEdge: (from: string, to: string) => {
+  addEdge: (from: string, to: string, weight?: number) => {
     const { graph, positions } = get();
     const hadFrom = graph.hasNode(from);
     const hadTo = graph.hasNode(to);
-    graph.addEdge(from, to);
+    graph.addEdge(from, to, weight);
     const newPositions = new Map(positions);
     if (!hadFrom) newPositions.set(from, randomPosition());
     if (!hadTo) newPositions.set(to, randomPosition());
@@ -249,12 +250,12 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   setDirected: (directed: boolean) => {
     const { graph } = get();
-    const newGraph = new Graph(directed);
+    const newGraph = new Graph(directed, graph.isWeighted);
     for (const name of graph.nodeNames) {
       newGraph.addNode(name);
     }
-    for (const [from, to] of graph.getEdges()) {
-      newGraph.addEdge(from, to);
+    for (const [from, to, weight] of graph.getEdges()) {
+      newGraph.addEdge(from, to, weight);
     }
     set({ graph: newGraph });
   },
@@ -398,6 +399,34 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           }
           break;
         }
+        case 'djikstra': {
+          if (!startNode) return;
+          const result = GraphAlgorithms.djikstra(graph, startNode);
+          resultMessage = endNode 
+            ? `Distance to ${endNode}: ${result.get(endNode) === Infinity ? 'Unreachable' : result.get(endNode)}`
+            : `Shortest paths from ${startNode} computed`;
+          details = Array.from(result.entries()).map(([node, dist]) => `${node}: ${dist === Infinity ? '∞' : dist}`);
+          break;
+        }
+        case 'prims': {
+          if (!startNode) return;
+          const result = GraphAlgorithms.prims(graph, startNode);
+          resultMessage = `Prim's MST built from ${startNode}`;
+          details = [
+            `Total edges: ${result.length}`, 
+            ...result.map(([u, v]) => `${u} - ${v}`)
+          ];
+          break;
+        }
+        case 'kruskal': {
+          const result = GraphAlgorithms.kruskal(graph);
+          resultMessage = `Kruskal's MST computed`;
+          details = [
+            `Total edges: ${result.length}`, 
+            ...result.map(([u, v]) => `${u} - ${v}`)
+          ];
+          break;
+        }
       }
 
       const algorithmTitles: Record<string, string> = {
@@ -411,6 +440,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         diameter: 'Graph Diameter',
         cycle: 'Cycle Detection',
         girth: 'Girth (Shortest Cycle)',
+        djikstra: 'Djikstra Shortest Path',
+        prims: "Prim's MST",
+        kruskal: "Kruskal's MST",
       };
 
       set({
@@ -456,13 +488,23 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   setGridGraph: (grid: Grid | null) => set({ gridGraph: grid }),
 
+  setGraphWeighted: (weighted: boolean) => {
+    const { graph } = get();
+    if (graph.isWeighted !== weighted) {
+      const newGraph = new Graph(graph.isDirected, weighted);
+      for (const name of graph.nodeNames) newGraph.addNode(name);
+      for (const [from, to, weight] of graph.getEdges()) newGraph.addEdge(from, to, weight);
+      set({ graph: newGraph });
+    }
+  },
+
   setGraphMode: (mode: 'undirected' | 'directed' | 'island') => {
     if (mode === 'undirected') {
       const { graph } = get();
       if (graph.isDirected) {
-        const newGraph = new Graph(false);
+        const newGraph = new Graph(false, graph.isWeighted);
         for (const name of graph.nodeNames) newGraph.addNode(name);
-        for (const [from, to] of graph.getEdges()) newGraph.addEdge(from, to);
+        for (const [from, to, weight] of graph.getEdges()) newGraph.addEdge(from, to, weight);
         set({ graphMode: mode, graph: newGraph });
       } else {
         set({ graphMode: mode });
@@ -470,9 +512,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     } else if (mode === 'directed') {
       const { graph } = get();
       if (!graph.isDirected) {
-        const newGraph = new Graph(true);
+        const newGraph = new Graph(true, graph.isWeighted);
         for (const name of graph.nodeNames) newGraph.addNode(name);
-        for (const [from, to] of graph.getEdges()) newGraph.addEdge(from, to);
+        for (const [from, to, weight] of graph.getEdges()) newGraph.addEdge(from, to, weight);
         set({ graphMode: mode, graph: newGraph });
       } else {
         set({ graphMode: mode });

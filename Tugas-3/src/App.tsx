@@ -95,6 +95,21 @@ const ALGORITHMS = [
     icon: Diamond, badge: 'Girth', cardClass: 'algo-card-girth',
     needsStart: false, needsEnd: false, category: 'property',
   },
+  {
+    id: 'djikstra', name: 'Djikstra', desc: 'Find shortest paths from a start node',
+    icon: Route, badge: 'Weighted', cardClass: 'algo-card-path',
+    needsStart: true, needsEnd: false, category: 'weighted',
+  },
+  {
+    id: 'prims', name: "Prim's MST", desc: 'Find Minimum Spanning Tree starting from a node',
+    icon: GitBranch, badge: 'Weighted', cardClass: 'algo-card-components',
+    needsStart: true, needsEnd: false, category: 'weighted',
+  },
+  {
+    id: 'kruskal', name: "Kruskal's MST", desc: 'Find Minimum Spanning Tree of the whole graph',
+    icon: Network, badge: 'Weighted', cardClass: 'algo-card-connectivity',
+    needsStart: false, needsEnd: false, category: 'weighted',
+  },
 ];
 
 const CATEGORIES = [
@@ -102,6 +117,7 @@ const CATEGORIES = [
   { id: 'traversal', label: 'Traversal' },
   { id: 'structure', label: 'Structure' },
   { id: 'property', label: 'Properties' },
+  { id: 'weighted', label: 'Weighted' },
 ];
 
 /* ============================================
@@ -232,6 +248,7 @@ function LeftPanel() {
   const [newNodeName, setNewNodeName] = useState('');
   const [edgeFrom, setEdgeFrom] = useState('');
   const [edgeTo, setEdgeTo] = useState('');
+  const [edgeWeight, setEdgeWeight] = useState('1');
   const [showJSON, setShowJSON] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
   const [jsonError, setJsonError] = useState('');
@@ -247,11 +264,13 @@ function LeftPanel() {
 
   const handleAddEdge = useCallback(() => {
     if (edgeFrom.trim() && edgeTo.trim()) {
-      addEdge(edgeFrom.trim(), edgeTo.trim());
+      const weight = graph.isWeighted ? parseFloat(edgeWeight) || 1 : 1;
+      addEdge(edgeFrom.trim(), edgeTo.trim(), weight);
       setEdgeFrom('');
       setEdgeTo('');
+      setEdgeWeight('1');
     }
-  }, [edgeFrom, edgeTo, addEdge]);
+  }, [edgeFrom, edgeTo, edgeWeight, addEdge, graph.isWeighted]);
 
   const handleImport = useCallback(() => {
     try {
@@ -392,6 +411,17 @@ function LeftPanel() {
                   />
                 </div>
 
+                <div className="card flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Waypoints className={`w-4 h-4 ${graph.isWeighted ? 'text-neon-cyan' : 'text-gray-500'}`} />
+                    <span className="text-xs font-medium text-gray-300">Weighted Graph</span>
+                  </div>
+                  <button
+                    onClick={() => useGraphStore.getState().setGraphWeighted(!graph.isWeighted)}
+                    className={`toggle ${graph.isWeighted ? 'active' : ''}`}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Add Node</label>
                   <div className="flex gap-2">
@@ -433,6 +463,17 @@ function LeftPanel() {
                       {graph.nodeNames.map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </div>
+                  {graph.isWeighted && (
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={edgeWeight}
+                        onChange={(e) => setEdgeWeight(e.target.value)}
+                        placeholder="Weight"
+                        className="input-field flex-1"
+                      />
+                    </div>
+                  )}
                   <button onClick={handleAddEdge} className="btn-primary w-full flex items-center justify-center gap-1.5">
                     <GitBranch className="w-3.5 h-3.5" />
                     Add Edge

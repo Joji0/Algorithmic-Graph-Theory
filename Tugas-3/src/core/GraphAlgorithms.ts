@@ -620,7 +620,7 @@ export class GraphAlgorithms {
     const steps: AlgorithmStepEvent[] = [];
 
     switch (algorithm) {
-      /* ───────── DFS ───────── */
+      /* --------- DFS --------- */
       case 'dfs': {
         if (!startNode) return steps;
         const startId = graph.getId(startNode);
@@ -664,7 +664,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── BFS ───────── */
+      /* --------- BFS --------- */
       case 'bfs': {
         if (!startNode) return steps;
         const startId = graph.getId(startNode);
@@ -697,7 +697,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── PATH ───────── */
+      /* --------- PATH --------- */
       case 'path': {
         if (!startNode || !endNode) return steps;
         steps.push({ type: 'highlight-node', nodes: [startNode], color: '#00f0ff', message: `Find path from ${startNode} to ${endNode}`, delay: 400 });
@@ -754,7 +754,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── CONNECTIVITY ───────── */
+      /* --------- CONNECTIVITY --------- */
       case 'connectivity': {
         if (graph.isEmpty) break;
         const startId = 0;
@@ -795,7 +795,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── COMPONENTS ───────── */
+      /* --------- COMPONENTS --------- */
       case 'components': {
         const compColors = ['#00f0ff', '#a855f7', '#10b981', '#f97316', '#ec4899', '#facc15', '#3b82f6', '#ef4444'];
         const visitedGlobal = new Set<number>();
@@ -833,7 +833,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── BIPARTITE ───────── */
+      /* --------- BIPARTITE --------- */
       case 'bipartite': {
         if (graph.isEmpty) break;
         const colorArr = new Array<number>(graph.size).fill(-1);
@@ -908,7 +908,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── DIAMETER ───────── */
+      /* --------- DIAMETER --------- */
       case 'diameter': {
         if (graph.isEmpty) break;
         const result = this.diameter(graph);
@@ -959,7 +959,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── CYCLE ───────── */
+      /* --------- CYCLE --------- */
       case 'cycle': {
         if (graph.isEmpty) break;
 
@@ -1035,7 +1035,7 @@ export class GraphAlgorithms {
         break;
       }
 
-      /* ───────── GIRTH ───────── */
+      /* --------- GIRTH --------- */
       case 'girth': {
         if (graph.isEmpty) break;
         const result = this.girth(graph);
@@ -1096,6 +1096,46 @@ export class GraphAlgorithms {
               delay: 250,
             });
           }
+        }
+        break;
+      }
+      
+      /* --------- DJIKSTRA --------- */
+      case 'djikstra': {
+        if (!startNode || graph.isEmpty) break;
+        steps.push({ type: 'highlight-node', nodes: [startNode], color: '#facc15', message: `Start Djikstra from ${startNode}`, delay: 400 });
+        
+        const distances = this.djikstra(graph, startNode);
+        for (const [node, dist] of distances.entries()) {
+          if (dist !== Infinity && node !== startNode) {
+             steps.push({ type: 'visit', nodes: [node], color: '#eab308', message: `Distance to ${node}: ${dist}`, delay: 200 });
+          }
+        }
+        break;
+      }
+      
+      /* --------- PRIMS --------- */
+      case 'prims': {
+        if (!startNode || graph.isEmpty) break;
+        steps.push({ type: 'highlight-node', nodes: [startNode], color: '#14b8a6', message: `Start Prim's MST from ${startNode}`, delay: 400 });
+        
+        const mstEdges = this.prims(graph, startNode);
+        for (const [u, v] of mstEdges) {
+          steps.push({ type: 'highlight-edge', edges: [[u,v]], color: '#0f766e', message: `MST Edge: ${u} - ${v}`, delay: 250 });
+          steps.push({ type: 'visit', nodes: [u, v], color: '#14b8a6', message: `Node in MST: ${v}`, delay: 100 });
+        }
+        break;
+      }
+      
+      /* --------- KRUSKAL --------- */
+      case 'kruskal': {
+        if (graph.isEmpty) break;
+        steps.push({ type: 'highlight-node', nodes: graph.nodeNames, color: '#6366f1', message: `Calculate Kruskal's MST`, delay: 400 });
+        
+        const mstEdges = this.kruskal(graph);
+        for (const [u, v] of mstEdges) {
+          steps.push({ type: 'highlight-edge', edges: [[u,v]], color: '#4338ca', message: `Selected Edge: ${u} - ${v}`, delay: 250 });
+          steps.push({ type: 'visit', nodes: [u, v], color: '#6366f1', message: `Nodes in MST`, delay: 100 });
         }
         break;
       }
