@@ -635,15 +635,6 @@ export class GraphAlgorithms {
   }
 
 
-  /**
-   * TSP (Traveling Salesman Problem) — brute-force exact solver.
-   * Enumerates every Hamiltonian circuit starting/ending at `startName`
-   * by permuting the remaining n-1 vertices. Only considers tours where
-   * every consecutive pair (including the closing edge) has an edge in the
-   * graph — i.e. detects a Hamiltonian circuit and takes the minimum weight.
-   *
-   * Complexity: O((n-1)! * n). Practical for n <= 8.
-   */
   static tsp(graph: Graph, startName: string): TSPResult {
     const n = graph.size;
     if (n === 0) {
@@ -651,7 +642,6 @@ export class GraphAlgorithms {
     }
     const startId = graph.getId(startName);
 
-    // Pre-compute weight/adjacency matrix (Infinity when no edge exists).
     const w: number[][] = [];
     for (let i = 0; i < n; i++) {
       const row = new Array<number>(n).fill(Infinity);
@@ -669,7 +659,6 @@ export class GraphAlgorithms {
     let bestTour: string[] = [];
     let permutationsChecked = 0;
 
-    // Heap's algorithm to enumerate all permutations of `others` in place.
     const permute = (arr: number[], k: number) => {
       if (k === 1) {
         permutationsChecked++;
@@ -705,7 +694,6 @@ export class GraphAlgorithms {
     };
 
     if (others.length === 0) {
-      // Only one city — trivial tour.
       return {
         bestTour: [startName, startName],
         bestCost: 0,
