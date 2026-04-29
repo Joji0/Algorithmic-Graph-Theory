@@ -192,6 +192,16 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       case 'wheel6': graph = PresetGraphs.wheel(6); break;
       case 'wheel8': graph = PresetGraphs.wheel(8); break;
       case 'binaryTree3': graph = PresetGraphs.binaryTree(3); break;
+      case 'path5': graph = PresetGraphs.path(5); break;
+      case 'path8': graph = PresetGraphs.path(8); break;
+      case 'prism5': graph = PresetGraphs.prism(5); break;
+      case 'prism6': graph = PresetGraphs.prism(6); break;
+      case 'genPetersen7_2': graph = PresetGraphs.generalizedPetersen(7, 2); break;
+      case 'genPetersen8_3': graph = PresetGraphs.generalizedPetersen(8, 3); break;
+      case 'circulant8_1_3': graph = PresetGraphs.circulant(8, [1, 3]); break;
+      case 'circulant10_1_2': graph = PresetGraphs.circulant(10, [1, 2]); break;
+      case 'hypercube3': graph = PresetGraphs.hypercube(3); break;
+      case 'hypercube4': graph = PresetGraphs.hypercube(4); break;
       case 'grid3x3': graph = PresetGraphs.grid(3, 3); break;
       case 'grid4x4': graph = PresetGraphs.grid(4, 4); break;
       case 'directedAcyclic': graph = PresetGraphs.directedAcyclic(); break;
@@ -201,6 +211,23 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       case 'tspSample5': graph = PresetGraphs.tspSample5(); break;
       case 'tspSample6': graph = PresetGraphs.tspSample6(); break;
       case 'tspSample7': graph = PresetGraphs.tspSample7(); break;
+      // ---- Kelas Graf Penting (urutan daftar tugas) ----
+      case 'completeK7': graph = PresetGraphs.complete(7); break;
+      case 'bipartiteK25': graph = PresetGraphs.completeBipartite(2, 5); break;
+      case 'treeT4': graph = PresetGraphs.binaryTree(4); break;
+      case 'cycleC7': graph = PresetGraphs.cycle(7); break;
+      case 'pathP6': graph = PresetGraphs.path(6); break;
+      case 'wheelW5': graph = PresetGraphs.wheel(5); break;
+      case 'prismY4': graph = PresetGraphs.prism(4); break;
+      case 'petersenOrder': graph = PresetGraphs.petersen(); break;
+      case 'genPetersen9_2': graph = PresetGraphs.generalizedPetersen(9, 2); break;
+      case 'circulant7_1_2': graph = PresetGraphs.circulant(7, [1, 2]); break;
+      case 'hypercubeQ2': graph = PresetGraphs.hypercube(2); break;
+      case 'gridG5x5': graph = PresetGraphs.grid(5, 5); break;
+      case 'tspKota8': graph = PresetGraphs.tspKota8(); break;
+      case 'tspGrid9': graph = PresetGraphs.tspGrid9(); break;
+      case 'tspCluster8': graph = PresetGraphs.tspCluster8(); break;
+      case 'tspEuclidean10': graph = PresetGraphs.tspEuclidean10(); break;
       default: graph = PresetGraphs.petersen(); break;
     }
     const positions = generatePositions(graph);
@@ -466,6 +493,33 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           }
           break;
         }
+        case 'tspGreedy': {
+          if (!startNode) return;
+          const result = GraphAlgorithms.tspNearestNeighbor(graph, startNode);
+          if (!result.feasible) {
+            resultMessage = `Greedy TSP stuck from ${startNode}`;
+            details = [
+              `Visited so far: ${result.tour.join(' → ')}`,
+              `Partial cost: ${result.totalCost}`,
+              'Nearest Neighbor heuristic could not complete a Hamiltonian circuit on this graph.',
+            ];
+          } else {
+            resultMessage = `Greedy tour: ${result.tour.join(' → ')} (cost ${result.totalCost})`;
+            details = [
+              `Start / end: ${startNode}`,
+              `Cities visited: ${graph.size}`,
+              `Total cost (greedy): ${result.totalCost}`,
+              `Tour: ${result.tour.join(' → ')}`,
+              `Heuristic: Nearest Neighbor (Rosenkrantz, Stearns & Lewis, 1977) — O(n²), not guaranteed optimal`,
+              ...result.steps.map((s, i) =>
+                i === result.steps.length - 1
+                  ? `Step ${i + 1}: close ${s.from} → ${s.to} (w=${s.weight})`
+                  : `Step ${i + 1}: ${s.from} → ${s.to} (w=${s.weight}); picked nearest of ${s.candidates.length}`
+              ),
+            ];
+          }
+          break;
+        }
         case 'kruskal': {
           const result = GraphAlgorithms.kruskal(graph);
           const isComplete = graph.size > 0 && result.length === graph.size - 1;
@@ -495,6 +549,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         prims: "Prim's MST",
         kruskal: "Kruskal's MST",
         tsp: 'TSP (Brute-force Hamiltonian)',
+        tspGreedy: 'TSP (Greedy Nearest Neighbor)',
       };
 
       set({

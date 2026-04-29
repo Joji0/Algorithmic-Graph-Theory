@@ -92,6 +92,20 @@ export interface TSPResult {
   feasible: boolean;
 }
 
+export interface TSPGreedyStep {
+  from: string;
+  to: string;
+  weight: number;
+  candidates: Array<{ city: string; weight: number }>;
+}
+
+export interface TSPGreedyResult {
+  tour: string[];
+  totalCost: number;
+  steps: TSPGreedyStep[];
+  feasible: boolean;
+}
+
 export interface AlgorithmStepEvent {
   type: 'visit' | 'enqueue' | 'dequeue' | 'backtrack' | 'highlight-edge' | 'highlight-node' | 'color-node' | 'color-edge' | 'result';
   nodes?: string[];
@@ -711,6 +725,79 @@ export class GraphAlgorithms {
       permutationsChecked,
       allTours,
       feasible: bestCost !== Infinity,
+    };
+  }
+
+  static tspNearestNeighbor(graph: Graph, startName: string): TSPGreedyResult {
+    const n = graph.size;
+    if (n === 0) {
+      return { tour: [], totalCost: 0, steps: [], feasible: false };
+    }
+    const startId = graph.getId(startName);
+
+    const w: number[][] = [];
+    for (let i = 0; i < n; i++) {
+      const row = new Array<number>(n).fill(Infinity);
+      for (const nb of graph.getAdjList(i)) {
+        row[nb] = graph.isWeighted ? graph.getWeightById(i, nb) : 1;
+      }
+      w[i] = row;
+    }
+
+    const visited = new Array<boolean>(n).fill(false);
+    visited[startId] = true;
+    const tourIds: number[] = [startId];
+    const steps: TSPGreedyStep[] = [];
+    let totalCost = 0;
+    let current = startId;
+
+    for (let step = 0; step < n - 1; step++) {
+      let bestNb = -1;
+      let bestW = Infinity;
+      const candidates: Array<{ city: string; weight: number }> = [];
+      for (let v = 0; v < n; v++) {
+        if (visited[v] || v === current) continue;
+        const weight = w[current][v];
+        if (weight === Infinity) continue;
+        candidates.push({ city: graph.getName(v), weight });
+        if (weight < bestW) {
+          bestW = weight;
+          bestNb = v;
+        }
+      }
+      if (bestNb === -1) {
+        return { tour: tourIds.map((id) => graph.getName(id)), totalCost, steps, feasible: false };
+      }
+      steps.push({
+        from: graph.getName(current),
+        to: graph.getName(bestNb),
+        weight: bestW,
+        candidates: candidates.sort((a, b) => a.weight - b.weight),
+      });
+      visited[bestNb] = true;
+      tourIds.push(bestNb);
+      totalCost += bestW;
+      current = bestNb;
+    }
+
+    const closing = w[current][startId];
+    if (closing === Infinity) {
+      return { tour: tourIds.map((id) => graph.getName(id)), totalCost, steps, feasible: false };
+    }
+    steps.push({
+      from: graph.getName(current),
+      to: startName,
+      weight: closing,
+      candidates: [{ city: startName, weight: closing }],
+    });
+    tourIds.push(startId);
+    totalCost += closing;
+
+    return {
+      tour: tourIds.map((id) => graph.getName(id)),
+      totalCost,
+      steps,
+      feasible: true,
     };
   }
 
@@ -1633,6 +1720,111 @@ export class GraphAlgorithms {
             color: C_INVALID,
             message: 'No Hamiltonian circuit exists — TSP infeasible',
             delay: 500,
+          });
+        }
+        break;
+      }
+
+      /* --------- TSP NEAREST NEIGHBOR (Greedy) ---------
+         Rosenkrantz, Stearns & Lewis (1977). At each step, move to the
+         nearest unvisited city. O(n^2), not optimal but usually close.    */
+      case 'tspGreedy': {
+        if (!startNode || graph.isEmpty) break;
+        const result = this.tspNearestNeighbor(graph, startNode);
+        const allEdges = graph.getEdges().map(([u, v]) => [u, v] as [string, string]);
+
+        const C_DIM_NODE  = '#1e293b';
+        const C_DIM_EDGE  = '#334155';
+        const C_START     = '#f59e0b';
+        const C_CURRENT   = '#38bdf8';
+        const C_CAND      = '#fbbf24';
+        const C_PICK      = '#10b981';
+        const C_EDGE_TOUR = '#22c55e';
+        const C_CLOSE     = '#f97316';
+        const C_INVALID   = '#ef4444';
+
+        steps.push({
+          type: 'color-node',
+          nodes: graph.nodeNames,
+          color: C_DIM_NODE,
+          message: `Greedy TSP (Nearest Neighbor) from ${startNode}`,
+          delay: 400,
+        });
+        steps.push({ type: 'color-edge', edges: allEdges, color: C_DIM_EDGE, delay: 100 });
+        steps.push({
+          type: 'highlight-node',
+          nodes: [startNode],
+          color: C_START,
+          message: `Start city: ${startNode}`,
+          delay: 400,
+        });
+
+        let runningCost = 0;
+        const visitedNames = new Set<string>([startNode]);
+
+        for (let i = 0; i < result.steps.length; i++) {
+          const s = result.steps[i];
+          const isClosing = i === result.steps.length - 1 && result.feasible;
+
+          if (!isClosing) {
+            const candEdges = s.candidates
+              .filter((c) => !visitedNames.has(c.city))
+              .map((c) => [s.from, c.city] as [string, string]);
+            if (candEdges.length > 0) {
+              steps.push({
+                type: 'color-edge',
+                edges: candEdges,
+                color: C_CAND,
+                message: `From ${s.from}: ${s.candidates.length} candidate(s). Nearest = ${s.to} (w=${s.weight})`,
+                delay: 420,
+              });
+            }
+          }
+
+          runningCost += s.weight;
+          steps.push({
+            type: 'color-edge',
+            edges: [[s.from, s.to]],
+            color: isClosing ? C_CLOSE : C_EDGE_TOUR,
+            message: isClosing
+              ? `Close tour ${s.from} → ${s.to} (w=${s.weight}). Total cost: ${runningCost}`
+              : `Pick nearest: ${s.from} → ${s.to} (w=${s.weight}). Running cost: ${runningCost}`,
+            delay: 320,
+          });
+          if (!isClosing) {
+            steps.push({
+              type: 'color-node',
+              nodes: [s.to],
+              color: i === result.steps.length - 1 ? C_PICK : C_CURRENT,
+              delay: 180,
+            });
+            visitedNames.add(s.to);
+          }
+        }
+
+        if (!result.feasible) {
+          steps.push({
+            type: 'color-node',
+            nodes: [startNode],
+            color: C_INVALID,
+            message: 'Greedy got stuck — no edge to an unvisited city (or cannot close tour)',
+            delay: 500,
+          });
+        } else {
+          const tourEdges: Array<[string, string]> = [];
+          for (let i = 0; i < result.tour.length - 1; i++) tourEdges.push([result.tour[i], result.tour[i + 1]]);
+          steps.push({
+            type: 'color-edge',
+            edges: tourEdges,
+            color: C_EDGE_TOUR,
+            message: `Greedy tour: ${result.tour.join(' → ')} (cost ${result.totalCost}) — heuristic, not guaranteed optimal`,
+            delay: 600,
+          });
+          steps.push({
+            type: 'color-node',
+            nodes: result.tour,
+            color: C_PICK,
+            delay: 250,
           });
         }
         break;

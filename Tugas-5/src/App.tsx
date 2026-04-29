@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Search, GitBranch, CircleDot, Route,
   Waypoints, Layers, Split, Ruler, RefreshCw, Target, Hexagon,
   Info, X, Zap, Eye, EyeOff, Clock, ArrowRight, Settings,
-  Triangle, Diamond, Star, Box, Circle, Sparkles, Grid3x3, ToggleLeft, ToggleRight, Cuboid, Square
+  Triangle, Diamond, Star, Box, Circle, Sparkles, Grid3x3, ToggleLeft, ToggleRight, Cuboid, Square, MapPin
 } from 'lucide-react';
 import GraphCanvas3D from './components/canvas/GraphCanvas3D';
 import GraphCanvas2D from './components/canvas/GraphCanvas2D';
@@ -33,7 +33,17 @@ const PRESETS = [
   { id: 'cube', name: 'Cube', icon: Box, desc: '3-dimensional cube graph', badge: '3D' },
   { id: 'wheel6', name: 'W₆', icon: Target, desc: 'Wheel on 6 rim nodes', badge: 'Wheel' },
   { id: 'wheel8', name: 'W₈', icon: Target, desc: 'Wheel on 8 rim nodes', badge: 'Wheel' },
-  { id: 'binaryTree3', name: 'Binary Tree', icon: GitBranch, desc: 'Depth-3 binary tree', badge: 'Tree' },
+  { id: 'binaryTree3', name: 'Binary Tree', icon: GitBranch, desc: 'Depth-3 binary tree (Tₙ)', badge: 'Tree' },
+  { id: 'path5', name: 'P₅', icon: ArrowRight, desc: 'Path graph on 5 vertices', badge: 'Path' },
+  { id: 'path8', name: 'P₈', icon: ArrowRight, desc: 'Path graph on 8 vertices', badge: 'Path' },
+  { id: 'prism5', name: 'Y₅', icon: Cuboid, desc: 'Pentagonal prism (C₅ □ K₂)', badge: 'Prism' },
+  { id: 'prism6', name: 'Y₆', icon: Cuboid, desc: 'Hexagonal prism (C₆ □ K₂)', badge: 'Prism' },
+  { id: 'genPetersen7_2', name: 'P(7,2)', icon: Hexagon, desc: 'Generalized Petersen P(7,2)', badge: 'Gen-Pet' },
+  { id: 'genPetersen8_3', name: 'P(8,3)', icon: Hexagon, desc: 'Möbius–Kantor-like P(8,3)', badge: 'Gen-Pet' },
+  { id: 'circulant8_1_3', name: 'C₈(1,3)', icon: Circle, desc: 'Circulant graph C₈(1,3)', badge: 'Circulant' },
+  { id: 'circulant10_1_2', name: 'C₁₀(1,2)', icon: Circle, desc: 'Circulant graph C₁₀(1,2)', badge: 'Circulant' },
+  { id: 'hypercube3', name: 'Q₃', icon: Box, desc: 'Hypercube H(3) — 8 vertices', badge: 'Hypercube' },
+  { id: 'hypercube4', name: 'Q₄', icon: Box, desc: 'Hypercube H(4) — 16 vertices', badge: 'Hypercube' },
   { id: 'grid3x3', name: 'Grid 3×3', icon: Layers, desc: '3×3 grid graph', badge: 'Grid' },
   { id: 'grid4x4', name: 'Grid 4×4', icon: Layers, desc: '4×4 grid graph', badge: 'Grid' },
   { id: 'directedAcyclic', name: 'DAG', icon: ArrowRight, desc: 'Directed acyclic graph', badge: 'Directed' },
@@ -43,6 +53,23 @@ const PRESETS = [
   { id: 'tspSample5', name: 'TSP-Sample-5', icon: Route, desc: '5-city complete weighted graph for TSP', badge: 'TSP' },
   { id: 'tspSample6', name: 'TSP-Sample-6', icon: Route, desc: '6-city complete weighted graph for TSP', badge: 'TSP' },
   { id: 'tspSample7', name: 'TSP-Sample-7', icon: Route, desc: '7-city complete weighted graph for TSP', badge: 'TSP' },
+  // ---- Kelas Graf Penting (urutan sesuai daftar tugas) ----
+  { id: 'completeK7', name: 'K₇', icon: Star, desc: 'Graf lengkap pada 7 vertex', badge: 'Complete' },
+  { id: 'bipartiteK25', name: 'K₂,₅', icon: Split, desc: 'Graf bipartit lengkap K₂,₅', badge: 'Bipartite' },
+  { id: 'treeT4', name: 'T (d=4)', icon: GitBranch, desc: 'Pohon Tₙ — binary tree kedalaman 4', badge: 'Tree' },
+  { id: 'cycleC7', name: 'C₇', icon: Circle, desc: 'Siklus Cₙ pada 7 vertex', badge: 'Cycle' },
+  { id: 'pathP6', name: 'P₆', icon: ArrowRight, desc: 'Lintasan Pₙ pada 6 vertex', badge: 'Path' },
+  { id: 'wheelW5', name: 'W₅', icon: Target, desc: 'Graf roda Wₙ dengan 5 rim', badge: 'Wheel' },
+  { id: 'prismY4', name: 'Y₄', icon: Cuboid, desc: 'Graf prisma Y₄ (C₄ □ K₂)', badge: 'Prism' },
+  { id: 'petersenOrder', name: 'Petersen', icon: Hexagon, desc: 'Petersen graph (klasik)', badge: 'Famous' },
+  { id: 'genPetersen9_2', name: 'P(9,2)', icon: Hexagon, desc: 'Generalized Petersen P(9,2)', badge: 'Gen-Pet' },
+  { id: 'circulant7_1_2', name: 'C₇(1,2)', icon: Circle, desc: 'Circulant graph C₇(1,2)', badge: 'Circulant' },
+  { id: 'hypercubeQ2', name: 'Q₂', icon: Box, desc: 'Hypercube H(2) = C₄', badge: 'Hypercube' },
+  { id: 'gridG5x5', name: 'G(5,5)', icon: Layers, desc: 'Grid graph G(5,5)', badge: 'Grid' },
+  { id: 'tspKota8', name: 'TSP-Kota-8', icon: MapPin, desc: '8 Indonesian cities with Euclidean distances', badge: 'TSP' },
+  { id: 'tspGrid9', name: 'TSP-Grid-9', icon: Grid3x3, desc: '9 cities on a 3×3 grid (Euclidean)', badge: 'TSP' },
+  { id: 'tspCluster8', name: 'TSP-Cluster-8', icon: CircleDot, desc: '8 cities in 2 clusters', badge: 'TSP' },
+  { id: 'tspEuclidean10', name: 'TSP-Euc-10', icon: Route, desc: '10 random Euclidean points', badge: 'TSP' },
 ];
 
 /* ============================================
@@ -116,6 +143,11 @@ const ALGORITHMS = [
   },
   {
     id: 'tsp', name: 'TSP (Brute Force)', desc: 'Exact Traveling Salesman via Hamiltonian circuit enumeration',
+    icon: Route, badge: 'TSP', cardClass: 'algo-card-path',
+    needsStart: true, needsEnd: false, category: 'weighted',
+  },
+  {
+    id: 'tspGreedy', name: 'TSP (Greedy NN)', desc: 'Nearest Neighbor heuristic (Rosenkrantz–Stearns–Lewis, 1977) — fast, not guaranteed optimal',
     icon: Route, badge: 'TSP', cardClass: 'algo-card-path',
     needsStart: true, needsEnd: false, category: 'weighted',
   },

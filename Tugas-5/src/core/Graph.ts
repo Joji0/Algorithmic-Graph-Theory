@@ -407,6 +407,112 @@ export class PresetGraphs {
     return g;
   }
 
+  /** Path graph P_n — n vertices connected in a straight line (n-1 edges). */
+  static path(n: number): Graph {
+    const g = new Graph(false);
+    const nodes: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const name = `P${i + 1}`;
+      nodes.push(name);
+      g.addNode(name);
+    }
+    for (let i = 0; i < n - 1; i++) {
+      g.addEdge(nodes[i], nodes[i + 1]);
+    }
+    return g;
+  }
+
+  /**
+   * Prism graph Y_n = C_n □ K_2 — two n-cycles with matched rungs (n ≥ 3).
+   * 2n vertices, 3n edges. Y_3 = K_{3,3}-minus-perfect-matching (triangular prism).
+   */
+  static prism(n: number): Graph {
+    const g = new Graph(false);
+    const outer: string[] = [];
+    const inner: string[] = [];
+    for (let i = 0; i < n; i++) {
+      outer.push(`A${i + 1}`);
+      inner.push(`B${i + 1}`);
+      g.addNode(outer[i]);
+      g.addNode(inner[i]);
+    }
+    for (let i = 0; i < n; i++) {
+      g.addEdge(outer[i], outer[(i + 1) % n]);
+      g.addEdge(inner[i], inner[(i + 1) % n]);
+      g.addEdge(outer[i], inner[i]);
+    }
+    return g;
+  }
+
+  /**
+   * Generalized Petersen graph P(n, k) — 2n vertices: outer cycle u_0..u_{n-1},
+   * inner "star" v_0..v_{n-1} with v_i ~ v_{i+k mod n}, plus spokes u_i ~ v_i.
+   * Requires n ≥ 3 and 1 ≤ k < n/2. P(5,2) = Petersen, P(n,1) = prism Y_n.
+   */
+  static generalizedPetersen(n: number, k: number): Graph {
+    const g = new Graph(false);
+    const outer: string[] = [];
+    const inner: string[] = [];
+    for (let i = 0; i < n; i++) {
+      outer.push(`U${i}`);
+      inner.push(`V${i}`);
+      g.addNode(outer[i]);
+      g.addNode(inner[i]);
+    }
+    for (let i = 0; i < n; i++) {
+      g.addEdge(outer[i], outer[(i + 1) % n]);
+      g.addEdge(outer[i], inner[i]);
+      // Avoid duplicate inner edges when 2k ≡ 0 (mod n).
+      const j = (i + k) % n;
+      if (!g.hasEdge(inner[i], inner[j])) {
+        g.addEdge(inner[i], inner[j]);
+      }
+    }
+    return g;
+  }
+
+  /**
+   * Circulant graph C_n(a_1, …, a_r) — n vertices on a cycle; each vertex i
+   * is joined to i ± a_j (mod n) for every jump a_j. C_n(1) = cycle C_n,
+   * C_n(1, 2) adds chords to next-next neighbours.
+   */
+  static circulant(n: number, jumps: number[]): Graph {
+    const g = new Graph(false);
+    const nodes: string[] = [];
+    for (let i = 0; i < n; i++) {
+      nodes.push(`C${i}`);
+      g.addNode(nodes[i]);
+    }
+    for (let i = 0; i < n; i++) {
+      for (const a of jumps) {
+        const mod = ((a % n) + n) % n;
+        if (mod === 0) continue;
+        const j = (i + mod) % n;
+        if (!g.hasEdge(nodes[i], nodes[j])) g.addEdge(nodes[i], nodes[j]);
+      }
+    }
+    return g;
+  }
+
+  /**
+   * Hypercube graph Q_n (a.k.a. H(n)) — 2^n vertices labelled by binary
+   * strings of length n; edge between strings that differ in exactly one bit.
+   * Q_1 = K_2, Q_2 = C_4, Q_3 = 3-cube.
+   */
+  static hypercube(n: number): Graph {
+    const g = new Graph(false);
+    const size = 1 << n;
+    const label = (x: number) => (n === 0 ? '0' : x.toString(2).padStart(n, '0'));
+    for (let i = 0; i < size; i++) g.addNode(label(i));
+    for (let i = 0; i < size; i++) {
+      for (let b = 0; b < n; b++) {
+        const j = i ^ (1 << b);
+        if (i < j) g.addEdge(label(i), label(j));
+      }
+    }
+    return g;
+  }
+
   static binaryTree(depth: number): Graph {
     const g = new Graph(false);
     const queue: Array<{ name: string; level: number }> = [{ name: '1', level: 0 }];
@@ -526,6 +632,69 @@ export class PresetGraphs {
     g.addEdge('D', 'E', 14); g.addEdge('D', 'F', 3);  g.addEdge('D', 'G', 22);
     g.addEdge('E', 'F', 17); g.addEdge('E', 'G', 5);
     g.addEdge('F', 'G', 13);
+    return g;
+  }
+
+  /** TSP 8 Kota Indonesia — cities with approximate Euclidean distances */
+  static tspKota8(): Graph {
+    const g = new Graph(false, true);
+    const cities = ['JKT', 'BDG', 'SMG', 'YOG', 'SBY', 'PLB', 'MDN', 'MKS'];
+    for (const c of cities) g.addNode(c);
+    g.addEdge('JKT', 'BDG', 141); g.addEdge('JKT', 'SMG', 224); g.addEdge('JKT', 'YOG', 316); g.addEdge('JKT', 'SBY', 447); g.addEdge('JKT', 'PLB', 141); g.addEdge('JKT', 'MDN', 447); g.addEdge('JKT', 'MKS', 300);
+    g.addEdge('BDG', 'SMG', 224); g.addEdge('BDG', 'YOG', 283); g.addEdge('BDG', 'SBY', 424); g.addEdge('BDG', 'PLB', 200); g.addEdge('BDG', 'MDN', 316); g.addEdge('BDG', 'MKS', 412);
+    g.addEdge('SMG', 'YOG', 100); g.addEdge('SMG', 'SBY', 224); g.addEdge('SMG', 'PLB', 361); g.addEdge('SMG', 'MDN', 361); g.addEdge('SMG', 'MKS', 283);
+    g.addEdge('YOG', 'SBY', 141); g.addEdge('YOG', 'PLB', 447); g.addEdge('YOG', 'MDN', 316); g.addEdge('YOG', 'MKS', 361);
+    g.addEdge('SBY', 'PLB', 583); g.addEdge('SBY', 'MDN', 400); g.addEdge('SBY', 'MKS', 412);
+    g.addEdge('PLB', 'MDN', 510); g.addEdge('PLB', 'MKS', 412);
+    g.addEdge('MDN', 'MKS', 640);
+    return g;
+  }
+
+  /** TSP 3×3 Grid — 9 points on a grid with Euclidean distances */
+  static tspGrid9(): Graph {
+    const g = new Graph(false, true);
+    const cities = ['G00', 'G01', 'G02', 'G10', 'G11', 'G12', 'G20', 'G21', 'G22'];
+    for (const c of cities) g.addNode(c);
+    g.addEdge('G00', 'G01', 100); g.addEdge('G00', 'G02', 200); g.addEdge('G00', 'G10', 100); g.addEdge('G00', 'G11', 141); g.addEdge('G00', 'G12', 224); g.addEdge('G00', 'G20', 200); g.addEdge('G00', 'G21', 224); g.addEdge('G00', 'G22', 283);
+    g.addEdge('G01', 'G02', 100); g.addEdge('G01', 'G10', 141); g.addEdge('G01', 'G11', 100); g.addEdge('G01', 'G12', 141); g.addEdge('G01', 'G20', 224); g.addEdge('G01', 'G21', 200); g.addEdge('G01', 'G22', 224);
+    g.addEdge('G02', 'G10', 224); g.addEdge('G02', 'G11', 141); g.addEdge('G02', 'G12', 100); g.addEdge('G02', 'G20', 283); g.addEdge('G02', 'G21', 224); g.addEdge('G02', 'G22', 200);
+    g.addEdge('G10', 'G11', 100); g.addEdge('G10', 'G12', 200); g.addEdge('G10', 'G20', 100); g.addEdge('G10', 'G21', 141); g.addEdge('G10', 'G22', 224);
+    g.addEdge('G11', 'G12', 100); g.addEdge('G11', 'G20', 141); g.addEdge('G11', 'G21', 100); g.addEdge('G11', 'G22', 141);
+    g.addEdge('G12', 'G20', 224); g.addEdge('G12', 'G21', 141); g.addEdge('G12', 'G22', 100);
+    g.addEdge('G20', 'G21', 100); g.addEdge('G20', 'G22', 200);
+    g.addEdge('G21', 'G22', 100);
+    return g;
+  }
+
+  /** TSP Cluster 8 — 8 cities in 2 clusters (tests clustering heuristics) */
+  static tspCluster8(): Graph {
+    const g = new Graph(false, true);
+    const cities = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'];
+    for (const c of cities) g.addNode(c);
+    g.addEdge('C1', 'C2', 100); g.addEdge('C1', 'C3', 100); g.addEdge('C1', 'C4', 141); g.addEdge('C1', 'C5', 707); g.addEdge('C1', 'C6', 781); g.addEdge('C1', 'C7', 781); g.addEdge('C1', 'C8', 849);
+    g.addEdge('C2', 'C3', 141); g.addEdge('C2', 'C4', 100); g.addEdge('C2', 'C5', 640); g.addEdge('C2', 'C6', 707); g.addEdge('C2', 'C7', 721); g.addEdge('C2', 'C8', 781);
+    g.addEdge('C3', 'C4', 100); g.addEdge('C3', 'C5', 640); g.addEdge('C3', 'C6', 721); g.addEdge('C3', 'C7', 707); g.addEdge('C3', 'C8', 781);
+    g.addEdge('C4', 'C5', 566); g.addEdge('C4', 'C6', 640); g.addEdge('C4', 'C7', 640); g.addEdge('C4', 'C8', 707);
+    g.addEdge('C5', 'C6', 100); g.addEdge('C5', 'C7', 100); g.addEdge('C5', 'C8', 141);
+    g.addEdge('C6', 'C7', 141); g.addEdge('C6', 'C8', 100);
+    g.addEdge('C7', 'C8', 100);
+    return g;
+  }
+
+  /** TSP Euclidean 10 — 10 random-like points with Euclidean distances */
+  static tspEuclidean10(): Graph {
+    const g = new Graph(false, true);
+    const cities = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10'];
+    for (const c of cities) g.addNode(c);
+    g.addEdge('P1', 'P2', 361); g.addEdge('P1', 'P3', 510); g.addEdge('P1', 'P4', 806); g.addEdge('P1', 'P5', 608); g.addEdge('P1', 'P6', 806); g.addEdge('P1', 'P7', 825); g.addEdge('P1', 'P8', 583); g.addEdge('P1', 'P9', 1000); g.addEdge('P1', 'P10', 900);
+    g.addEdge('P2', 'P3', 361); g.addEdge('P2', 'P4', 510); g.addEdge('P2', 'P5', 316); g.addEdge('P2', 'P6', 447); g.addEdge('P2', 'P7', 608); g.addEdge('P2', 'P8', 224); g.addEdge('P2', 'P9', 640); g.addEdge('P2', 'P10', 762);
+    g.addEdge('P3', 'P4', 361); g.addEdge('P3', 'P5', 640); g.addEdge('P3', 'P6', 608); g.addEdge('P3', 'P7', 316); g.addEdge('P3', 'P8', 447); g.addEdge('P3', 'P9', 707); g.addEdge('P3', 'P10', 412);
+    g.addEdge('P4', 'P5', 632); g.addEdge('P4', 'P6', 424); g.addEdge('P4', 'P7', 224); g.addEdge('P4', 'P8', 412); g.addEdge('P4', 'P9', 412); g.addEdge('P4', 'P10', 447);
+    g.addEdge('P5', 'P6', 316); g.addEdge('P5', 'P7', 806); g.addEdge('P5', 'P8', 224); g.addEdge('P5', 'P9', 539); g.addEdge('P5', 'P10', 1000);
+    g.addEdge('P6', 'P7', 640); g.addEdge('P6', 'P8', 224); g.addEdge('P6', 'P9', 224); g.addEdge('P6', 'P10', 860);
+    g.addEdge('P7', 'P8', 583); g.addEdge('P7', 'P9', 632); g.addEdge('P7', 'P10', 224);
+    g.addEdge('P8', 'P9', 424); g.addEdge('P8', 'P10', 781);
+    g.addEdge('P9', 'P10', 854);
     return g;
   }
 }
