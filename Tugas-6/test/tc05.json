@@ -1,0 +1,15 @@
+{
+  "directed": false,
+  "weighted": false,
+  "nodes": ["Budi", "Siti", "Ahmad", "Dewi", "Akuntansi", "Pemrograman", "Desain", "Manajemen"],
+  "edges": [
+    ["Budi", "Pemrograman"],
+    ["Budi", "Manajemen"],
+    ["Siti", "Akuntansi"],
+    ["Siti", "Desain"],
+    ["Ahmad", "Pemrograman"],
+    ["Ahmad", "Akuntansi"],
+    ["Dewi", "Desain"],
+    ["Dewi", "Manajemen"]
+  ]
+}

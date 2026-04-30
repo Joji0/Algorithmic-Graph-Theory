@@ -106,6 +106,17 @@ export interface TSPGreedyResult {
   feasible: boolean;
 }
 
+export interface PersonnelAssignmentResult {
+  isBipartite: boolean;
+  partitionA: string[];
+  partitionB: string[];
+  matching: Array<[string, string]>;
+  matchingSize: number;
+  unmatchedA: string[];
+  unmatchedB: string[];
+  augmentingPaths: Array<string[]>;
+}
+
 export interface AlgorithmStepEvent {
   type: 'visit' | 'enqueue' | 'dequeue' | 'backtrack' | 'highlight-edge' | 'highlight-node' | 'color-node' | 'color-edge' | 'result';
   nodes?: string[];
@@ -823,6 +834,141 @@ export class GraphAlgorithms {
     }
 
     return islands;
+  }
+
+  static personnelAssignment(graph: Graph): PersonnelAssignmentResult {
+    const bipartiteResult = this.isBipartite(graph);
+    if (!bipartiteResult.isBipartite) {
+      return {
+        isBipartite: false,
+        partitionA: [],
+        partitionB: [],
+        matching: [],
+        matchingSize: 0,
+        unmatchedA: [],
+        unmatchedB: [],
+        augmentingPaths: [],
+      };
+    }
+
+    const { partitionA, partitionB } = bipartiteResult;
+    const setA = new Set(partitionA);
+    const setB = new Set(partitionB);
+
+    // Build adjacency restricted to A→B edges
+    const adjA = new Map<string, string[]>();
+    for (const u of partitionA) {
+      const uId = graph.getId(u);
+      adjA.set(u, graph.getAdjList(uId).map((id) => graph.getName(id)).filter((v) => setB.has(v)));
+    }
+
+    const matchA = new Map<string, string>(); // A→B
+    const matchB = new Map<string, string>(); // B→A
+    const augmentingPaths: Array<string[]> = [];
+
+    for (const u of partitionA) {
+      if (matchA.has(u)) continue;
+
+      // BFS alternating tree from unmatched A-vertex u
+      // parentA[w] = the B-vertex that reached w (for A-vertices in tree)
+      // parentB[v] = the A-vertex that reached v (for B-vertices in tree)
+      const parentB = new Map<string, string>(); // B-vertex → A-vertex that found it via free edge
+      const parentA = new Map<string, string>(); // A-vertex → B-vertex that sent us back via matched edge
+      const visitedA = new Set<string>([u]);
+      const visitedB = new Set<string>();
+      const queue: string[] = [u]; // queue of A-vertices to expand
+      let foundB: string | null = null;
+
+      bfsLoop:
+      while (queue.length > 0) {
+        const a = queue.shift()!;
+        for (const b of (adjA.get(a) ?? [])) {
+          if (visitedB.has(b)) continue;
+          visitedB.add(b);
+          parentB.set(b, a);
+
+          if (!matchB.has(b)) {
+            // Found augmenting path — unmatched B vertex
+            foundB = b;
+            break bfsLoop;
+          }
+
+          // Follow matched edge back to an A-vertex
+          const aNext = matchB.get(b)!;
+          if (!visitedA.has(aNext)) {
+            visitedA.add(aNext);
+            parentA.set(aNext, b);
+            queue.push(aNext);
+          }
+        }
+      }
+
+      if (foundB !== null) {
+        // Reconstruct augmenting path and augment
+        const path: string[] = [];
+        let b: string | null = foundB;
+        let a: string | null = u;
+
+        // Walk back from foundB to u
+        const pathEdges: Array<[string, string]> = [];
+        let curB: string | null = foundB;
+        while (curB !== null) {
+          const curA: string = parentB.get(curB)!;
+          pathEdges.push([curA, curB]);
+          curB = parentA.get(curA) ?? null;
+        }
+
+        // Augment: flip all edges along the path
+        for (const [pa, pb] of pathEdges) {
+          matchA.set(pa, pb);
+          matchB.set(pb, pa);
+        }
+
+        // Build path array for display
+        path.push(u);
+        let bWalk: string | null = foundB;
+        while (bWalk !== null) {
+          const aWalk: string = parentB.get(bWalk)!;
+          // Insert in correct order by retracing
+          bWalk = parentA.get(aWalk) ?? null;
+        }
+        // Rebuild path in order: u → b1 → a1 → b2 → a2 → ... → foundB
+        const orderedPath: string[] = [u];
+        let walkB: string | null = foundB;
+        const bStack: string[] = [];
+        const aStack: string[] = [];
+        while (walkB !== null) {
+          const walkA: string = parentB.get(walkB)!;
+          bStack.push(walkB);
+          if (walkA !== u) aStack.push(walkA);
+          walkB = parentA.get(walkA) ?? null;
+        }
+        aStack.reverse();
+        bStack.reverse();
+        for (let i = 0; i < bStack.length; i++) {
+          if (i < aStack.length) orderedPath.push(aStack[i]);
+          orderedPath.push(bStack[i]);
+        }
+        augmentingPaths.push(orderedPath);
+      }
+    }
+
+    const matching: Array<[string, string]> = [];
+    for (const [a, b] of matchA.entries()) matching.push([a, b]);
+
+    const unmatchedA = partitionA.filter((a) => !matchA.has(a));
+    const unmatchedB = partitionB.filter((b) => !matchB.has(b));
+
+    return {
+      isBipartite: true,
+      partitionA,
+      partitionB,
+      matching,
+      matchingSize: matching.length,
+      unmatchedA,
+      unmatchedB,
+      augmentingPaths,
+    };
   }
 
   static getAnimationSteps(
@@ -1839,6 +1985,260 @@ export class GraphAlgorithms {
         for (const [u, v] of mstEdges) {
           steps.push({ type: 'highlight-edge', edges: [[u,v]], color: '#4338ca', message: `Selected Edge: ${u} - ${v}`, delay: 250 });
           steps.push({ type: 'visit', nodes: [u, v], color: '#6366f1', message: `Nodes in MST`, delay: 100 });
+        }
+        break;
+      }
+
+      /* --------- PERSONNEL ASSIGNMENT (M-Alternating Tree) --------- */
+      case 'personnelAssignment': {
+        if (graph.isEmpty) break;
+
+        const C_A = '#00f0ff';     // partition A (workers) — cyan
+        const C_B = '#f97316';     // partition B (jobs) — orange
+        const C_ROOT = '#facc15';  // current root A-vertex being expanded — yellow
+        const C_FREE = '#22d3ee';  // free edge explored in tree — light cyan
+        const C_MATCHED_BACK = '#a855f7'; // matched back-edge in tree — purple
+        const C_AUG_PATH = '#facc15'; // augmenting path highlight — yellow
+        const C_MATCH_FINAL = '#10b981'; // final matched edge/node — green
+        const C_UNMATCHED = '#475569';   // unmatched node at end — slate
+
+        // Phase 1: bipartite check & color partitions
+        const bipartiteResult = this.isBipartite(graph);
+        if (!bipartiteResult.isBipartite) {
+          steps.push({
+            type: 'color-node',
+            nodes: graph.nodeNames,
+            color: '#ef4444',
+            message: 'Graph is NOT bipartite — Personnel Assignment cannot run',
+            delay: 500,
+          });
+          break;
+        }
+
+        const { partitionA, partitionB } = bipartiteResult;
+        const setB = new Set(partitionB);
+
+        steps.push({
+          type: 'color-node',
+          nodes: partitionA,
+          color: C_A,
+          message: `Partition A (pekerja / workers): {${partitionA.join(', ')}}`,
+          delay: 400,
+        });
+        steps.push({
+          type: 'color-node',
+          nodes: partitionB,
+          color: C_B,
+          message: `Partition B (pekerjaan / jobs): {${partitionB.join(', ')}}`,
+          delay: 400,
+        });
+        steps.push({
+          type: 'highlight-node',
+          nodes: graph.nodeNames,
+          color: '#1e293b',
+          message: 'Starting M-Alternating Tree algorithm — building maximum matching',
+          delay: 300,
+        });
+
+        // Build adjacency A→B
+        const adjA = new Map<string, string[]>();
+        for (const u of partitionA) {
+          const uId = graph.getId(u);
+          adjA.set(u, graph.getAdjList(uId).map((id) => graph.getName(id)).filter((v) => setB.has(v)));
+        }
+
+        const matchA = new Map<string, string>();
+        const matchB = new Map<string, string>();
+
+        for (const u of partitionA) {
+          if (matchA.has(u)) continue;
+
+          // Highlight root
+          steps.push({
+            type: 'highlight-node',
+            nodes: [u],
+            color: C_ROOT,
+            message: `Build alternating tree from unmatched worker: ${u}`,
+            delay: 350,
+          });
+
+          // BFS alternating tree
+          const parentB = new Map<string, string>();
+          const parentA = new Map<string, string>();
+          const visitedA = new Set<string>([u]);
+          const visitedB = new Set<string>();
+          const queue: string[] = [u];
+          let foundB: string | null = null;
+
+          bfsAnim:
+          while (queue.length > 0) {
+            const a = queue.shift()!;
+            for (const b of (adjA.get(a) ?? [])) {
+              if (visitedB.has(b)) continue;
+              visitedB.add(b);
+              parentB.set(b, a);
+
+              steps.push({
+                type: 'highlight-edge',
+                edges: [[a, b]],
+                color: C_FREE,
+                message: `Explore free edge ${a} — ${b}`,
+                delay: 220,
+              });
+              steps.push({
+                type: 'highlight-node',
+                nodes: [b],
+                color: C_B,
+                message: `Visit job node ${b}`,
+                delay: 100,
+              });
+
+              if (!matchB.has(b)) {
+                foundB = b;
+                steps.push({
+                  type: 'highlight-node',
+                  nodes: [b],
+                  color: C_ROOT,
+                  message: `${b} is unmatched — augmenting path found!`,
+                  delay: 300,
+                });
+                break bfsAnim;
+              }
+
+              // Follow matched back-edge
+              const aNext = matchB.get(b)!;
+              steps.push({
+                type: 'highlight-edge',
+                edges: [[b, aNext]],
+                color: C_MATCHED_BACK,
+                message: `Follow matched edge ${b} — ${aNext} (already in M)`,
+                delay: 220,
+              });
+              if (!visitedA.has(aNext)) {
+                visitedA.add(aNext);
+                parentA.set(aNext, b);
+                queue.push(aNext);
+                steps.push({
+                  type: 'highlight-node',
+                  nodes: [aNext],
+                  color: C_A,
+                  message: `Add ${aNext} to alternating tree`,
+                  delay: 120,
+                });
+              }
+            }
+          }
+
+          if (foundB !== null) {
+            // Reconstruct augmenting path edges
+            const pathEdges: Array<[string, string]> = [];
+            let curB: string | null = foundB;
+            while (curB !== null) {
+              const curA: string = parentB.get(curB)!;
+              pathEdges.push([curA, curB]);
+              curB = parentA.get(curA) ?? null;
+            }
+
+            // Build ordered path for display
+            const orderedPath: string[] = [u];
+            const bStack: string[] = [];
+            const aStack: string[] = [];
+            let walkB: string | null = foundB;
+            while (walkB !== null) {
+              const walkA: string = parentB.get(walkB)!;
+              bStack.push(walkB);
+              if (walkA !== u) aStack.push(walkA);
+              walkB = parentA.get(walkA) ?? null;
+            }
+            aStack.reverse();
+            bStack.reverse();
+            for (let i = 0; i < bStack.length; i++) {
+              if (i < aStack.length) orderedPath.push(aStack[i]);
+              orderedPath.push(bStack[i]);
+            }
+
+            // Highlight augmenting path
+            steps.push({
+              type: 'color-node',
+              nodes: orderedPath,
+              color: C_AUG_PATH,
+              message: `Augmenting path: ${orderedPath.join(' → ')}`,
+              delay: 500,
+            });
+            const augEdges: Array<[string, string]> = pathEdges.map(([a, b]) => [a, b]);
+            steps.push({
+              type: 'color-edge',
+              edges: augEdges,
+              color: C_AUG_PATH,
+              message: 'Augmenting path — about to flip matching',
+              delay: 400,
+            });
+
+            // Augment
+            for (const [pa, pb] of pathEdges) {
+              matchA.set(pa, pb);
+              matchB.set(pb, pa);
+            }
+
+            // Show new matched edges in green
+            const newMatchEdges: Array<[string, string]> = pathEdges.map(([a, b]) => [a, b]);
+            steps.push({
+              type: 'color-edge',
+              edges: newMatchEdges,
+              color: C_MATCH_FINAL,
+              message: `Matching updated — size now ${matchA.size}`,
+              delay: 400,
+            });
+            steps.push({
+              type: 'color-node',
+              nodes: orderedPath,
+              color: C_MATCH_FINAL,
+              message: `Matched: ${u} ↔ ${foundB}`,
+              delay: 250,
+            });
+          } else {
+            steps.push({
+              type: 'color-node',
+              nodes: [u],
+              color: C_UNMATCHED,
+              message: `No augmenting path from ${u} — remains unmatched`,
+              delay: 300,
+            });
+          }
+        }
+
+        // Final summary: recolor all matched edges/nodes green, unmatched slate
+        const allMatchedEdges: Array<[string, string]> = [];
+        const allMatchedNodes: string[] = [];
+        for (const [a, b] of matchA.entries()) {
+          allMatchedEdges.push([a, b]);
+          allMatchedNodes.push(a, b);
+        }
+        if (allMatchedEdges.length > 0) {
+          steps.push({
+            type: 'color-edge',
+            edges: allMatchedEdges,
+            color: C_MATCH_FINAL,
+            message: `Maximum matching — size ${matchA.size}`,
+            delay: 500,
+          });
+          steps.push({
+            type: 'color-node',
+            nodes: allMatchedNodes,
+            color: C_MATCH_FINAL,
+            message: `Matched nodes`,
+            delay: 250,
+          });
+        }
+        const unmatchedNodes = [...partitionA, ...partitionB].filter((n) => !allMatchedNodes.includes(n));
+        if (unmatchedNodes.length > 0) {
+          steps.push({
+            type: 'color-node',
+            nodes: unmatchedNodes,
+            color: C_UNMATCHED,
+            message: `Unmatched nodes: ${unmatchedNodes.join(', ')}`,
+            delay: 300,
+          });
         }
         break;
       }

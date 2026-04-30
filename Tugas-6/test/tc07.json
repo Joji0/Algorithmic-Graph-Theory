@@ -1,0 +1,26 @@
+{
+  "directed": false,
+  "weighted": false,
+  "nodes": [
+    "Hendra", "Wahyu", "Ratna", "Fajar", "Indah", "Rizky",
+    "Analisis", "Coding", "Pengujian", "Desain", "Pemasaran", "Keuangan", "Humas", "Operasi", "Riset"
+  ],
+  "edges": [
+    ["Hendra", "Analisis"],
+    ["Hendra", "Coding"],
+    ["Wahyu", "Coding"],
+    ["Wahyu", "Pengujian"],
+    ["Ratna", "Desain"],
+    ["Ratna", "Pemasaran"],
+    ["Ratna", "Humas"],
+    ["Fajar", "Keuangan"],
+    ["Fajar", "Operasi"],
+    ["Fajar", "Riset"],
+    ["Indah", "Analisis"],
+    ["Indah", "Desain"],
+    ["Indah", "Riset"],
+    ["Rizky", "Pemasaran"],
+    ["Rizky", "Humas"],
+    ["Rizky", "Keuangan"]
+  ]
+}

@@ -228,6 +228,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       case 'tspGrid9': graph = PresetGraphs.tspGrid9(); break;
       case 'tspCluster8': graph = PresetGraphs.tspCluster8(); break;
       case 'tspEuclidean10': graph = PresetGraphs.tspEuclidean10(); break;
+      case 'assignKaryawan44': graph = PresetGraphs.assignKaryawan44(); break;
+      case 'assignKaryawan35': graph = PresetGraphs.assignKaryawan35(); break;
+      case 'assignKaryawan69': graph = PresetGraphs.assignKaryawan69(); break;
       default: graph = PresetGraphs.petersen(); break;
     }
     const positions = generatePositions(graph);
@@ -532,6 +535,26 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           ];
           break;
         }
+        case 'personnelAssignment': {
+          const result = GraphAlgorithms.personnelAssignment(graph);
+          if (!result.isBipartite) {
+            resultMessage = 'Graf bukan bipartit — Personnel Assignment tidak dapat dijalankan';
+            details = ['Algoritma Penugasan Personel memerlukan graf bipartit tak-berarah.'];
+          } else {
+            resultMessage = `Pencocokan maksimum: ${result.matchingSize} pasang`;
+            details = [
+              `Partisi A (pekerja): {${result.partitionA.join(', ')}}`,
+              `Partisi B (pekerjaan): {${result.partitionB.join(', ')}}`,
+              `Ukuran pencocokan: ${result.matchingSize}`,
+              `Pasangan: ${result.matching.map(([a, b]) => `${a} → ${b}`).join(', ')}`,
+              `Pekerja tidak tertugaskan: ${result.unmatchedA.length > 0 ? result.unmatchedA.join(', ') : 'tidak ada'}`,
+              `Pekerjaan tidak terisi: ${result.unmatchedB.length > 0 ? result.unmatchedB.join(', ') : 'tidak ada'}`,
+              `Augmenting paths ditemukan: ${result.augmentingPaths.length}`,
+              ...result.augmentingPaths.map((p, i) => `Path ${i + 1}: ${p.join(' → ')}`),
+            ];
+          }
+          break;
+        }
       }
 
       const algorithmTitles: Record<string, string> = {
@@ -550,6 +573,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         kruskal: "Kruskal's MST",
         tsp: 'TSP (Brute-force Hamiltonian)',
         tspGreedy: 'TSP (Greedy Nearest Neighbor)',
+        personnelAssignment: 'Penugasan Personel (M-Alternating Tree)',
       };
 
       set({

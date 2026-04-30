@@ -697,4 +697,63 @@ export class PresetGraphs {
     g.addEdge('P9', 'P10', 854);
     return g;
   }
+
+  /** Personnel Assignment 4×4 — 4 karyawan × 4 pekerjaan (undirected, unweighted) */
+  static assignKaryawan44(): Graph {
+    const g = new Graph(false, false);
+    const workers = ['Budi', 'Siti', 'Ahmad', 'Dewi'];
+    const jobs = ['Akuntansi', 'Pemrograman', 'Desain', 'Manajemen'];
+    for (const n of [...workers, ...jobs]) g.addNode(n);
+    g.addEdge('Budi', 'Pemrograman');
+    g.addEdge('Budi', 'Manajemen');
+    g.addEdge('Siti', 'Akuntansi');
+    g.addEdge('Siti', 'Desain');
+    g.addEdge('Ahmad', 'Pemrograman');
+    g.addEdge('Ahmad', 'Akuntansi');
+    g.addEdge('Dewi', 'Desain');
+    g.addEdge('Dewi', 'Manajemen');
+    return g;
+  }
+
+  /** Personnel Assignment 3×5 — 3 karyawan × 5 pekerjaan (undirected, unweighted) */
+  static assignKaryawan35(): Graph {
+    const g = new Graph(false, false);
+    const workers = ['Agus', 'Rina', 'Doni'];
+    const jobs = ['Memasak', 'Mengajar', 'Mengemudi', 'Menjahit', 'Menulis'];
+    for (const n of [...workers, ...jobs]) g.addNode(n);
+    g.addEdge('Agus', 'Mengemudi');
+    g.addEdge('Agus', 'Menulis');
+    g.addEdge('Rina', 'Memasak');
+    g.addEdge('Rina', 'Menjahit');
+    g.addEdge('Rina', 'Mengajar');
+    g.addEdge('Doni', 'Mengajar');
+    g.addEdge('Doni', 'Menulis');
+    g.addEdge('Doni', 'Mengemudi');
+    return g;
+  }
+
+  /** Personnel Assignment 6×9 — 6 karyawan × 9 pekerjaan (undirected, unweighted) */
+  static assignKaryawan69(): Graph {
+    const g = new Graph(false, false);
+    const workers = ['Hendra', 'Wahyu', 'Ratna', 'Fajar', 'Indah', 'Rizky'];
+    const jobs = ['Analisis', 'Coding', 'Pengujian', 'Desain', 'Pemasaran', 'Keuangan', 'Humas', 'Operasi', 'Riset'];
+    for (const n of [...workers, ...jobs]) g.addNode(n);
+    g.addEdge('Hendra', 'Analisis');
+    g.addEdge('Hendra', 'Coding');
+    g.addEdge('Wahyu', 'Coding');
+    g.addEdge('Wahyu', 'Pengujian');
+    g.addEdge('Ratna', 'Desain');
+    g.addEdge('Ratna', 'Pemasaran');
+    g.addEdge('Ratna', 'Humas');
+    g.addEdge('Fajar', 'Keuangan');
+    g.addEdge('Fajar', 'Operasi');
+    g.addEdge('Fajar', 'Riset');
+    g.addEdge('Indah', 'Analisis');
+    g.addEdge('Indah', 'Desain');
+    g.addEdge('Indah', 'Riset');
+    g.addEdge('Rizky', 'Pemasaran');
+    g.addEdge('Rizky', 'Humas');
+    g.addEdge('Rizky', 'Keuangan');
+    return g;
+  }
 }

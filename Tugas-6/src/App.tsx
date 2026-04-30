@@ -5,7 +5,8 @@ import {
   ChevronLeft, ChevronRight, Search, GitBranch, CircleDot, Route,
   Waypoints, Layers, Split, Ruler, RefreshCw, Target, Hexagon,
   Info, X, Zap, Eye, EyeOff, Clock, ArrowRight, Settings,
-  Triangle, Diamond, Star, Box, Circle, Sparkles, Grid3x3, ToggleLeft, ToggleRight, Cuboid, Square, MapPin
+  Triangle, Diamond, Star, Box, Circle, Sparkles, Grid3x3, ToggleLeft, ToggleRight, Cuboid, Square, MapPin,
+  Users
 } from 'lucide-react';
 import GraphCanvas3D from './components/canvas/GraphCanvas3D';
 import GraphCanvas2D from './components/canvas/GraphCanvas2D';
@@ -70,6 +71,9 @@ const PRESETS = [
   { id: 'tspGrid9', name: 'TSP-Grid-9', icon: Grid3x3, desc: '9 cities on a 3×3 grid (Euclidean)', badge: 'TSP' },
   { id: 'tspCluster8', name: 'TSP-Cluster-8', icon: CircleDot, desc: '8 cities in 2 clusters', badge: 'TSP' },
   { id: 'tspEuclidean10', name: 'TSP-Euc-10', icon: Route, desc: '10 random Euclidean points', badge: 'TSP' },
+  { id: 'assignKaryawan44', name: 'Penugasan 4×4', icon: Users, desc: '4 karyawan × 4 pekerjaan (bipartit)', badge: 'Penugasan' },
+  { id: 'assignKaryawan35', name: 'Penugasan 3×5', icon: Users, desc: '3 karyawan × 5 pekerjaan (bipartit)', badge: 'Penugasan' },
+  { id: 'assignKaryawan69', name: 'Penugasan 6×9', icon: Users, desc: '6 karyawan × 9 pekerjaan (bipartit)', badge: 'Penugasan' },
 ];
 
 /* ============================================
@@ -151,6 +155,13 @@ const ALGORITHMS = [
     icon: Route, badge: 'TSP', cardClass: 'algo-card-path',
     needsStart: true, needsEnd: false, category: 'weighted',
   },
+  {
+    id: 'personnelAssignment',
+    name: 'Penugasan Personel',
+    desc: 'Pencocokan bipartit maksimum via M-Alternating Tree (augmenting paths)',
+    icon: Users, badge: 'Matching', cardClass: 'algo-card-bipartite',
+    needsStart: false, needsEnd: false, category: 'matching',
+  },
 ];
 
 const CATEGORIES = [
@@ -159,6 +170,7 @@ const CATEGORIES = [
   { id: 'structure', label: 'Structure' },
   { id: 'property', label: 'Properties' },
   { id: 'weighted', label: 'Weighted' },
+  { id: 'matching', label: 'Matching' },
 ];
 
 /* ============================================

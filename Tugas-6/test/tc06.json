@@ -1,0 +1,15 @@
+{
+  "directed": false,
+  "weighted": false,
+  "nodes": ["Agus", "Rina", "Doni", "Memasak", "Mengajar", "Mengemudi", "Menjahit", "Menulis"],
+  "edges": [
+    ["Agus", "Mengemudi"],
+    ["Agus", "Menulis"],
+    ["Rina", "Memasak"],
+    ["Rina", "Menjahit"],
+    ["Rina", "Mengajar"],
+    ["Doni", "Mengajar"],
+    ["Doni", "Menulis"],
+    ["Doni", "Mengemudi"]
+  ]
+}
