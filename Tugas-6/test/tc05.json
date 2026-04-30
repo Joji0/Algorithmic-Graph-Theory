@@ -1,15 +1,15 @@
 {
   "directed": false,
   "weighted": false,
-  "nodes": ["Budi", "Siti", "Ahmad", "Dewi", "Akuntansi", "Pemrograman", "Desain", "Manajemen"],
+  "nodes": ["Budi", "Siti", "Ahmad", "Dewi", "IF1210", "IF2130", "IF2240", "IF3170"],
   "edges": [
-    ["Budi", "Pemrograman"],
-    ["Budi", "Manajemen"],
-    ["Siti", "Akuntansi"],
-    ["Siti", "Desain"],
-    ["Ahmad", "Pemrograman"],
-    ["Ahmad", "Akuntansi"],
-    ["Dewi", "Desain"],
-    ["Dewi", "Manajemen"]
+    ["Budi", "IF2130"],
+    ["Budi", "IF3170"],
+    ["Siti", "IF1210"],
+    ["Siti", "IF2240"],
+    ["Ahmad", "IF2130"],
+    ["Ahmad", "IF1210"],
+    ["Dewi", "IF2240"],
+    ["Dewi", "IF3170"]
   ]
 }

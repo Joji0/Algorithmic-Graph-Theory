@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Network, Play, RotateCcw, Download, Upload, Plus, Minus, Trash2,
@@ -6,11 +6,12 @@ import {
   Waypoints, Layers, Split, Ruler, RefreshCw, Target, Hexagon,
   Info, X, Zap, Eye, EyeOff, Clock, ArrowRight, Settings,
   Triangle, Diamond, Star, Box, Circle, Sparkles, Grid3x3, ToggleLeft, ToggleRight, Cuboid, Square, MapPin,
-  Users, Calendar
+  Users, Calendar, ExternalLink
 } from 'lucide-react';
 import GraphCanvas3D from './components/canvas/GraphCanvas3D';
 import GraphCanvas2D from './components/canvas/GraphCanvas2D';
 import IslandCanvas from './components/canvas/IslandCanvas';
+import { ResultDetailsModal } from './components/ResultDetailsModal';
 import { useGraphStore } from './store/useGraphStore';
 import { Grid } from './core/Graph';
 import { GraphAlgorithms } from './core/GraphAlgorithms';
@@ -702,12 +703,60 @@ function RightPanel() {
   const [gridRows, setGridRows] = useState('3');
   const [gridCols, setGridCols] = useState('3');
   const [gridInput, setGridInput] = useState('110\n010\n001');
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    title: string;
+    message: string;
+    details: string[];
+    algorithm?: string;
+    timestamp?: number;
+  } | null>(null);
+  
+  // Panel resize state
+  const [panelWidth, setPanelWidth] = useState(380);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const isResizingRef = useRef(false);
 
   useEffect(() => {
     if (selectedNode && !startNode) {
       setStartNode(selectedNode);
     }
   }, [selectedNode]);
+
+  // Resize handler
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      const newWidth = window.innerWidth - e.clientX;
+      setPanelWidth(Math.max(300, Math.min(newWidth, window.innerWidth - 200)));
+    };
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false;
+    };
+
+    if (isResizingRef.current) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, []);
+
+  const handleOpenModal = (result: (typeof results)[0]) => {
+    setModalData({
+      title: result.title,
+      message: result.message,
+      details: result.details,
+      algorithm: result.algorithm,
+      timestamp: result.timestamp,
+    });
+    setModalOpen(true);
+  };
 
   const handleRun = useCallback(() => {
     if (!selectedAlgo || isAnimating) return;
@@ -764,8 +813,20 @@ function RightPanel() {
       </button>
 
       <div
-        className={`absolute right-0 top-14 bottom-0 w-[380px] z-30 glass-heavy border-l border-white/5 overflow-hidden flex flex-col panel-right ${!rightPanelOpen ? 'closed' : ''}`}
+        ref={dragRef}
+        className={`absolute right-0 top-14 bottom-0 z-30 glass-heavy border-l border-white/5 overflow-hidden flex flex-col panel-right ${!rightPanelOpen ? 'closed' : ''}`}
+        style={{ width: `${panelWidth}px` }}
       >
+        {/* Resize handle */}
+        <div
+          onMouseDown={() => (isResizingRef.current = true)}
+          className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-neon-cyan/50 transition-colors group"
+          title="Drag to resize panel"
+        >
+          {/* Visual indicator bar */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-8 bg-neon-cyan/20 group-hover:bg-neon-cyan/80 rounded-full transition-all opacity-0 group-hover:opacity-100" />
+        </div>
+
         <div className="p-4 border-b border-white/5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
@@ -988,6 +1049,18 @@ function RightPanel() {
                             </div>
                             <p className="text-xs text-gray-400 mt-1 font-mono">{result.message}</p>
 
+                            {/* "More" Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenModal(result);
+                              }}
+                              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-medium hover:bg-neon-cyan/20 transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              More
+                            </button>
+
                             <AnimatePresence>
                               {isExpanded && (
                                 <motion.div
@@ -1018,6 +1091,15 @@ function RightPanel() {
           </AnimatePresence>
         </div>
       </div>
+      <ResultDetailsModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalData?.title || ''}
+        message={modalData?.message || ''}
+        details={modalData?.details || []}
+        algorithm={modalData?.algorithm}
+        timestamp={modalData?.timestamp}
+      />
     </>
   );
 }
