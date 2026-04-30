@@ -756,4 +756,68 @@ export class PresetGraphs {
     g.addEdge('Rizky', 'Keuangan');
     return g;
   }
+
+  /** Timetabling Example 3×4 — 3 teachers × 4 classes, room constraint 2 */
+  static timetableExample34(): Graph {
+    const g = new Graph(false, true);
+    const teachers = ['Ibu Siti', 'Pak Budi', 'Ibu Ratna'];
+    const classes = ['10A', '10B', '11A', '11B'];
+    for (const n of [...teachers, ...classes]) g.addNode(n);
+    for (const t of teachers) {
+      for (const c of classes) {
+        g.addEdge(t, c, 1);
+      }
+    }
+    return g;
+  }
+
+  /** Timetabling Example 4×5 — 4 teachers × 5 classes, mixed weights, room constraint 3 */
+  static timetableExample45(): Graph {
+    const g = new Graph(false, true);
+    const teachers = ['Pak Ahmad', 'Ibu Dewi', 'Pak Hendra', 'Ibu Rina'];
+    const classes = ['9A', '9B', '9C', '10A', '10B'];
+    for (const n of [...teachers, ...classes]) g.addNode(n);
+    g.addEdge('Pak Ahmad', '9A', 1);
+    g.addEdge('Pak Ahmad', '9B', 2);
+    g.addEdge('Pak Ahmad', '9C', 1);
+    g.addEdge('Pak Ahmad', '10A', 1);
+    g.addEdge('Ibu Dewi', '9B', 1);
+    g.addEdge('Ibu Dewi', '9C', 2);
+    g.addEdge('Ibu Dewi', '10A', 1);
+    g.addEdge('Ibu Dewi', '10B', 1);
+    g.addEdge('Pak Hendra', '9A', 1);
+    g.addEdge('Pak Hendra', '10A', 2);
+    g.addEdge('Pak Hendra', '10B', 1);
+    g.addEdge('Ibu Rina', '9C', 1);
+    g.addEdge('Ibu Rina', '10A', 1);
+    g.addEdge('Ibu Rina', '10B', 2);
+    return g;
+  }
+
+  /** Timetabling Example 5×6 — 5 teachers × 6 classes, mixed weights, room constraint 3 */
+  static timetableExample56(): Graph {
+    const g = new Graph(false, true);
+    const teachers = ['Pak Suryanto', 'Ibu Melati', 'Pak Firman', 'Ibu Nurlita', 'Pak Bambang'];
+    const classes = ['7A', '7B', '8A', '8B', '9A', '9B'];
+    for (const n of [...teachers, ...classes]) g.addNode(n);
+    g.addEdge('Pak Suryanto', '7A', 2);
+    g.addEdge('Pak Suryanto', '8A', 1);
+    g.addEdge('Pak Suryanto', '9A', 1);
+    g.addEdge('Ibu Melati', '7B', 1);
+    g.addEdge('Ibu Melati', '8B', 2);
+    g.addEdge('Ibu Melati', '9B', 1);
+    g.addEdge('Pak Firman', '7A', 1);
+    g.addEdge('Pak Firman', '8A', 2);
+    g.addEdge('Pak Firman', '9A', 1);
+    g.addEdge('Ibu Nurlita', '7B', 2);
+    g.addEdge('Ibu Nurlita', '8B', 1);
+    g.addEdge('Ibu Nurlita', '9B', 1);
+    g.addEdge('Pak Bambang', '7A', 1);
+    g.addEdge('Pak Bambang', '7B', 1);
+    g.addEdge('Pak Bambang', '8A', 1);
+    g.addEdge('Pak Bambang', '8B', 1);
+    g.addEdge('Pak Bambang', '9A', 1);
+    g.addEdge('Pak Bambang', '9B', 1);
+    return g;
+  }
 }

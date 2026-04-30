@@ -1,0 +1,24 @@
+{
+  "directed": false,
+  "weighted": true,
+  "nodes": [
+    "Pak Ahmad", "Ibu Dewi", "Pak Hendra", "Ibu Rina",
+    "9A", "9B", "9C", "10A", "10B"
+  ],
+  "edges": [
+    ["Pak Ahmad", "9A", 1],
+    ["Pak Ahmad", "9B", 2],
+    ["Pak Ahmad", "9C", 1],
+    ["Pak Ahmad", "10A", 1],
+    ["Ibu Dewi", "9B", 1],
+    ["Ibu Dewi", "9C", 2],
+    ["Ibu Dewi", "10A", 1],
+    ["Ibu Dewi", "10B", 1],
+    ["Pak Hendra", "9A", 1],
+    ["Pak Hendra", "10A", 2],
+    ["Pak Hendra", "10B", 1],
+    ["Ibu Rina", "9C", 1],
+    ["Ibu Rina", "10A", 1],
+    ["Ibu Rina", "10B", 2]
+  ]
+}

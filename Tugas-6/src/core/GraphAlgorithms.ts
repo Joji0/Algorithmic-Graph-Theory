@@ -117,6 +117,22 @@ export interface PersonnelAssignmentResult {
   augmentingPaths: Array<string[]>;
 }
 
+export interface TimeTableingResult {
+  isBipartite: boolean;
+  partitionX: string[];
+  partitionY: string[];
+  maxDegree: number;
+  totalEdges: number;
+  minPeriodsNeeded: number;
+  roomConstraint: number;
+  matchings: Array<Array<[string, string]>>;
+  periodUtilization: number[];
+  isBalanced: boolean;
+  isValid: boolean;
+  timetable: string[][];
+  balanceDetails: string;
+}
+
 export interface AlgorithmStepEvent {
   type: 'visit' | 'enqueue' | 'dequeue' | 'backtrack' | 'highlight-edge' | 'highlight-node' | 'color-node' | 'color-edge' | 'result';
   nodes?: string[];
@@ -968,6 +984,207 @@ export class GraphAlgorithms {
       unmatchedA,
       unmatchedB,
       augmentingPaths,
+    };
+  }
+
+  static timetableEdgeColouring(graph: Graph, roomConstraint: number = 3): TimeTableingResult {
+    const bipartiteResult = this.isBipartite(graph);
+    if (!bipartiteResult.isBipartite) {
+      return {
+        isBipartite: false,
+        partitionX: [],
+        partitionY: [],
+        maxDegree: 0,
+        totalEdges: 0,
+        minPeriodsNeeded: 0,
+        roomConstraint,
+        matchings: [],
+        periodUtilization: [],
+        isBalanced: false,
+        isValid: false,
+        timetable: [],
+        balanceDetails: 'Graph is not bipartite.',
+      };
+    }
+
+    const { partitionA: partitionX, partitionB: partitionY } = bipartiteResult;
+    const setY = new Set(partitionY);
+
+    // Expand edges by weight
+    const edgeList: Array<[string, string]> = [];
+    const adjacency = new Map<string, Map<string, number>>();
+    const degree = new Map<string, number>();
+
+    for (const x of partitionX) {
+      const xId = graph.getId(x);
+      for (const yId of graph.getAdjList(xId)) {
+        const y = graph.getName(yId);
+        const weight = graph.isWeighted ? graph.getWeightById(xId, yId) : 1;
+        for (let i = 0; i < weight; i++) {
+          edgeList.push([x, y]);
+        }
+        adjacency.set(x, (adjacency.get(x) ?? new Map()).set(y, (adjacency.get(x)?.get(y) ?? 0) + 1));
+        degree.set(x, (degree.get(x) ?? 0) + 1);
+        degree.set(y, (degree.get(y) ?? 0) + 1);
+      }
+    }
+
+    const totalEdges = edgeList.length;
+    const maxDegree = Math.max(...Array.from(degree.values()), 0);
+    const minPeriodsNeeded = Math.max(maxDegree, Math.ceil(totalEdges / roomConstraint));
+
+    // Greedy edge colouring
+    const edgeColor = new Map<string, number>();
+    let p = minPeriodsNeeded;
+    let matchings: Array<Array<[string, string]>> = Array.from({ length: p }, () => []);
+    const usedInPeriod = new Map<number, Set<string>>();
+    for (let i = 0; i < p; i++) {
+      usedInPeriod.set(i, new Set());
+    }
+
+    for (const [x, y] of edgeList) {
+      let assigned = false;
+      for (let color = 0; color < p; color++) {
+        const used = usedInPeriod.get(color)!;
+        if (!used.has(x) && !used.has(y)) {
+          edgeColor.set(`${x}|${y}`, color);
+          matchings[color].push([x, y]);
+          used.add(x);
+          used.add(y);
+          assigned = true;
+          break;
+        }
+      }
+      if (!assigned) {
+        p++;
+        matchings.push([[x, y]]);
+        usedInPeriod.set(p - 1, new Set([x, y]));
+      }
+    }
+
+    const periodUtilization = matchings.map((m) => m.length);
+    let isBalanced = Math.max(...periodUtilization) - Math.min(...periodUtilization, Infinity) <= 1;
+    let balanceDetails = '';
+
+    // Balance matchings if room constraint active and needed
+    if (roomConstraint > 0 && !isBalanced) {
+      const balanceSteps: string[] = [];
+      let iterations = 0;
+      const maxIterations = 100;
+
+      while (!isBalanced && iterations < maxIterations) {
+        const minIdx = periodUtilization.indexOf(Math.min(...periodUtilization));
+        const maxIdx = periodUtilization.indexOf(Math.max(...periodUtilization));
+
+        if (periodUtilization[maxIdx] - periodUtilization[minIdx] <= 1) break;
+
+        // Find augmenting path: BFS in subgraph of max and min matchings
+        const subgraphEdges = new Map<string, Set<string>>();
+        for (const [x, y] of matchings[maxIdx]) {
+          if (!subgraphEdges.has(x)) subgraphEdges.set(x, new Set());
+          if (!subgraphEdges.has(y)) subgraphEdges.set(y, new Set());
+          subgraphEdges.get(x)!.add(y);
+          subgraphEdges.get(y)!.add(x);
+        }
+        for (const [x, y] of matchings[minIdx]) {
+          if (!subgraphEdges.has(x)) subgraphEdges.set(x, new Set());
+          if (!subgraphEdges.has(y)) subgraphEdges.set(y, new Set());
+          subgraphEdges.get(x)!.add(y);
+          subgraphEdges.get(y)!.add(x);
+        }
+
+        let pathFound = false;
+        outer:
+        for (const startNode of subgraphEdges.keys()) {
+          const parent = new Map<string, string>();
+          const queue = [startNode];
+          const visited = new Set([startNode]);
+
+          while (queue.length > 0 && !pathFound) {
+            const u = queue.shift()!;
+            for (const v of subgraphEdges.get(u) ?? []) {
+              if (!visited.has(v)) {
+                visited.add(v);
+                parent.set(v, u);
+                queue.push(v);
+
+                // Check if path ends in min matching with different color
+                const edgeInMin = matchings[minIdx].some(([a, b]) => (a === u && b === v) || (a === v && b === u));
+                const edgeInMax = matchings[maxIdx].some(([a, b]) => (a === u && b === v) || (a === v && b === u));
+                if ((edgeInMin && edgeInMax === false) || (edgeInMax && edgeInMin === false)) {
+                  // Reconstruct path
+                  const path: string[] = [v];
+                  let curr = v;
+                  while (parent.has(curr)) {
+                    curr = parent.get(curr)!;
+                    path.unshift(curr);
+                  }
+
+                  // Flip edges along path
+                  for (let i = 0; i < path.length - 1; i++) {
+                    const edge: [string, string] = [path[i], path[i + 1]];
+                    const idx1 = matchings[maxIdx].findIndex(([a, b]) => (a === edge[0] && b === edge[1]) || (a === edge[1] && b === edge[0]));
+                    const idx2 = matchings[minIdx].findIndex(([a, b]) => (a === edge[0] && b === edge[1]) || (a === edge[1] && b === edge[0]));
+
+                    if (idx1 >= 0) {
+                      matchings[minIdx].push(edge);
+                      matchings[maxIdx].splice(idx1, 1);
+                    } else if (idx2 >= 0) {
+                      matchings[maxIdx].push(edge);
+                      matchings[minIdx].splice(idx2, 1);
+                    }
+                  }
+
+                  periodUtilization[maxIdx]--;
+                  periodUtilization[minIdx]++;
+                  balanceSteps.push(`Swap: Period ${maxIdx + 1} → Period ${minIdx + 1}`);
+                  pathFound = true;
+                  break outer;
+                }
+              }
+            }
+          }
+
+          if (pathFound) break;
+        }
+
+        if (!pathFound) break;
+        isBalanced = Math.max(...periodUtilization) - Math.min(...periodUtilization, Infinity) <= 1;
+        iterations++;
+      }
+
+      balanceDetails = balanceSteps.length > 0 ? balanceSteps.join('; ') : 'No balancing needed.';
+    } else {
+      balanceDetails = roomConstraint <= 0 ? 'No room constraint.' : 'Already balanced.';
+    }
+
+    // Build timetable
+    const timetable: string[][] = Array.from({ length: p }, () => Array(partitionY.length).fill('-'));
+    for (let t = 0; t < p; t++) {
+      for (const [x, y] of matchings[t]) {
+        const yIdx = partitionY.indexOf(y);
+        if (yIdx >= 0) {
+          timetable[t][yIdx] = x;
+        }
+      }
+    }
+
+    const isValid = p >= minPeriodsNeeded && isBalanced && Math.max(...periodUtilization) <= roomConstraint;
+
+    return {
+      isBipartite: true,
+      partitionX,
+      partitionY,
+      maxDegree,
+      totalEdges,
+      minPeriodsNeeded,
+      roomConstraint,
+      matchings,
+      periodUtilization,
+      isBalanced,
+      isValid,
+      timetable,
+      balanceDetails,
     };
   }
 
@@ -2240,6 +2457,87 @@ export class GraphAlgorithms {
             delay: 300,
           });
         }
+        break;
+      }
+
+      /* --------- TIMETABLING (Edge Colouring) --------- */
+      case 'timetabling': {
+        const result = this.timetableEdgeColouring(graph, 3);
+        if (!result.isBipartite) {
+          steps.push({
+            type: 'color-node',
+            nodes: graph.nodeNames,
+            color: '#ef4444',
+            message: 'Not bipartite — Timetabling cannot run',
+            delay: 500,
+          });
+          break;
+        }
+
+        const C_X = '#00f0ff';     // teachers cyan
+        const C_Y = '#f97316';     // classes orange
+        const C_PERIOD = '#10b981'; // period assignment green
+
+        // Phase 1: bipartite coloring
+        steps.push({
+          type: 'color-node',
+          nodes: result.partitionX,
+          color: C_X,
+          message: `Guru: {${result.partitionX.join(', ')}}`,
+          delay: 400,
+        });
+        steps.push({
+          type: 'color-node',
+          nodes: result.partitionY,
+          color: C_Y,
+          message: `Kelas: {${result.partitionY.join(', ')}}`,
+          delay: 400,
+        });
+
+        // Phase 2: show each matching/period
+        const periodColors = ['#00f0ff', '#f97316', '#a855f7', '#facc15', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'];
+        for (let t = 0; t < result.matchings.length; t++) {
+          const pColor = periodColors[t % periodColors.length];
+          steps.push({
+            type: 'highlight-node',
+            nodes: graph.nodeNames,
+            color: '#1e293b',
+            message: `Periode ${t + 1}: ${result.periodUtilization[t]} kelas`,
+            delay: 300,
+          });
+          for (const [x, y] of result.matchings[t]) {
+            steps.push({
+              type: 'highlight-edge',
+              edges: [[x, y]],
+              color: pColor,
+              message: `${x} → ${y}`,
+              delay: 150,
+            });
+            steps.push({
+              type: 'color-node',
+              nodes: [x, y],
+              color: pColor,
+              delay: 100,
+            });
+          }
+        }
+
+        // Phase 3: final summary
+        const allEdges: Array<[string, string]> = result.matchings.flat();
+        steps.push({
+          type: 'color-edge',
+          edges: allEdges,
+          color: C_PERIOD,
+          message: `Jadwal selesai: ${result.matchings.length} periode`,
+          delay: 500,
+        });
+        steps.push({
+          type: 'color-node',
+          nodes: graph.nodeNames,
+          color: C_PERIOD,
+          message: `Valid: ${result.isValid ? 'Ya' : 'Tidak'}`,
+          delay: 300,
+        });
         break;
       }
     }

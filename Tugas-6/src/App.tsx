@@ -6,7 +6,7 @@ import {
   Waypoints, Layers, Split, Ruler, RefreshCw, Target, Hexagon,
   Info, X, Zap, Eye, EyeOff, Clock, ArrowRight, Settings,
   Triangle, Diamond, Star, Box, Circle, Sparkles, Grid3x3, ToggleLeft, ToggleRight, Cuboid, Square, MapPin,
-  Users
+  Users, Calendar
 } from 'lucide-react';
 import GraphCanvas3D from './components/canvas/GraphCanvas3D';
 import GraphCanvas2D from './components/canvas/GraphCanvas2D';
@@ -74,6 +74,9 @@ const PRESETS = [
   { id: 'assignKaryawan44', name: 'Penugasan 4×4', icon: Users, desc: '4 karyawan × 4 pekerjaan (bipartit)', badge: 'Penugasan' },
   { id: 'assignKaryawan35', name: 'Penugasan 3×5', icon: Users, desc: '3 karyawan × 5 pekerjaan (bipartit)', badge: 'Penugasan' },
   { id: 'assignKaryawan69', name: 'Penugasan 6×9', icon: Users, desc: '6 karyawan × 9 pekerjaan (bipartit)', badge: 'Penugasan' },
+  { id: 'timetableExample34', name: 'Jadwal 3×4', icon: Calendar, desc: '3 guru × 4 kelas', badge: 'Jadwal' },
+  { id: 'timetableExample45', name: 'Jadwal 4×5', icon: Calendar, desc: '4 guru × 5 kelas (beban bervariasi)', badge: 'Jadwal' },
+  { id: 'timetableExample56', name: 'Jadwal 5×6', icon: Calendar, desc: '5 guru × 6 kelas (kompleks)', badge: 'Jadwal' },
 ];
 
 /* ============================================
@@ -160,6 +163,13 @@ const ALGORITHMS = [
     name: 'Penugasan Personel',
     desc: 'Pencocokan bipartit maksimum via M-Alternating Tree (augmenting paths)',
     icon: Users, badge: 'Matching', cardClass: 'algo-card-bipartite',
+    needsStart: false, needsEnd: false, category: 'matching',
+  },
+  {
+    id: 'timetabling',
+    name: 'Jadwal Kelas',
+    desc: 'Edge colouring pada bipartit (Guru × Kelas) dengan penyeimbangan periode',
+    icon: Calendar, badge: 'Scheduling', cardClass: 'algo-card-bipartite',
     needsStart: false, needsEnd: false, category: 'matching',
   },
 ];

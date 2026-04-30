@@ -231,6 +231,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       case 'assignKaryawan44': graph = PresetGraphs.assignKaryawan44(); break;
       case 'assignKaryawan35': graph = PresetGraphs.assignKaryawan35(); break;
       case 'assignKaryawan69': graph = PresetGraphs.assignKaryawan69(); break;
+      case 'timetableExample34': graph = PresetGraphs.timetableExample34(); break;
+      case 'timetableExample45': graph = PresetGraphs.timetableExample45(); break;
+      case 'timetableExample56': graph = PresetGraphs.timetableExample56(); break;
       default: graph = PresetGraphs.petersen(); break;
     }
     const positions = generatePositions(graph);
@@ -555,6 +558,43 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           }
           break;
         }
+        case 'timetabling': {
+          const result = GraphAlgorithms.timetableEdgeColouring(graph, 3);
+          if (!result.isBipartite) {
+            resultMessage = 'Graf bukan bipartit — Timetabling tidak dapat dijalankan';
+            details = ['Algoritma Jadwal Kelas memerlukan graf bipartit.'];
+          } else {
+            resultMessage = `Jadwal: ${result.matchings.length} periode`;
+            const tableRows: string[] = [];
+            tableRows.push('┌─────────┬' + result.partitionY.map(() => '──────────┬').join('') + '──────┐');
+            tableRows.push('│ Periode │' + result.partitionY.map((c) => ` ${c.padEnd(8)} │`).join('') + ' Kelas │');
+            tableRows.push('├─────────┼' + result.partitionY.map(() => '──────────┼').join('') + '──────┤');
+            for (let t = 0; t < result.timetable.length; t++) {
+              const row = `│    ${String(t + 1).padEnd(4)} │` + result.timetable[t].map((teacher) => ` ${teacher.padEnd(8)} │`).join('') + ` ${result.periodUtilization[t]}    │`;
+              tableRows.push(row);
+            }
+            tableRows.push('└─────────┴' + result.partitionY.map(() => '──────────┴').join('') + '──────┘');
+            details = [
+              `Jadwal Kelas (Timetable):`,
+              ``,
+              ...tableRows,
+              ``,
+              `Statistik:`,
+              `Guru: ${result.partitionX.length}, Kelas: ${result.partitionY.length}`,
+              `Total jam ajar: ${result.totalEdges}`,
+              `Derajat maksimal: ${result.maxDegree}`,
+              `Periode minimum (teori): ${result.minPeriodsNeeded}`,
+              `Periode digunakan: ${result.matchings.length}`,
+              `Ruang tersedia (k): ${result.roomConstraint}`,
+              `Pemanfaatan per periode: ${result.periodUtilization.join(', ')}`,
+              `Seimbang: ${result.isBalanced ? 'Ya' : 'Tidak'}`,
+              `Valid: ${result.isValid ? 'Ya' : 'Tidak'}`,
+              ``,
+              `${result.balanceDetails}`,
+            ];
+          }
+          break;
+        }
       }
 
       const algorithmTitles: Record<string, string> = {
@@ -574,6 +614,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         tsp: 'TSP (Brute-force Hamiltonian)',
         tspGreedy: 'TSP (Greedy Nearest Neighbor)',
         personnelAssignment: 'Penugasan Personel (M-Alternating Tree)',
+        timetabling: 'Jadwal Kelas (Edge Colouring)',
       };
 
       set({

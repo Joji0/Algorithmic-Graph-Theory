@@ -1,0 +1,28 @@
+{
+  "directed": false,
+  "weighted": true,
+  "nodes": [
+    "Pak Suryanto", "Ibu Melati", "Pak Firman", "Ibu Nurlita", "Pak Bambang",
+    "7A", "7B", "8A", "8B", "9A", "9B"
+  ],
+  "edges": [
+    ["Pak Suryanto", "7A", 2],
+    ["Pak Suryanto", "8A", 1],
+    ["Pak Suryanto", "9A", 1],
+    ["Ibu Melati", "7B", 1],
+    ["Ibu Melati", "8B", 2],
+    ["Ibu Melati", "9B", 1],
+    ["Pak Firman", "7A", 1],
+    ["Pak Firman", "8A", 2],
+    ["Pak Firman", "9A", 1],
+    ["Ibu Nurlita", "7B", 2],
+    ["Ibu Nurlita", "8B", 1],
+    ["Ibu Nurlita", "9B", 1],
+    ["Pak Bambang", "7A", 1],
+    ["Pak Bambang", "7B", 1],
+    ["Pak Bambang", "8A", 1],
+    ["Pak Bambang", "8B", 1],
+    ["Pak Bambang", "9A", 1],
+    ["Pak Bambang", "9B", 1]
+  ]
+}
