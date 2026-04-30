@@ -1,0 +1,573 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-primary: #050510;
+  --color-bg-secondary: #0a0a1a;
+  --color-bg-tertiary: #111127;
+  --color-neon-cyan: #00f0ff;
+  --color-neon-purple: #a855f7;
+  --color-neon-pink: #ec4899;
+  --color-neon-green: #10b981;
+  --color-neon-orange: #f97316;
+  --color-neon-yellow: #facc15;
+  --color-neon-blue: #3b82f6;
+  --color-neon-red: #ef4444;
+  --color-glass-light: rgba(255, 255, 255, 0.04);
+  --color-glass-medium: rgba(255, 255, 255, 0.07);
+  --color-glass-heavy: rgba(255, 255, 255, 0.11);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg-primary);
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================
+   GLASSMORPHISM
+   ============================================ */
+.glass {
+  background: var(--color-glass-light);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-glass-border);
+}
+.glass-medium {
+  background: var(--color-glass-medium);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.glass-heavy {
+  background: var(--color-glass-heavy);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================
+   GRADIENT TEXT
+   ============================================ */
+.gradient-text-cyan-purple {
+  background: linear-gradient(135deg, #00f0ff 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-purple-pink {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-green-cyan {
+  background: linear-gradient(135deg, #10b981 0%, #00f0ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-orange-yellow {
+  background: linear-gradient(135deg, #f97316 0%, #facc15 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   NEON GLOW EFFECTS
+   ============================================ */
+.glow-cyan {
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2),
+              0 0 30px rgba(0, 240, 255, 0.1),
+              0 0 60px rgba(0, 240, 255, 0.05),
+              inset 0 0 15px rgba(0, 240, 255, 0.05);
+}
+.glow-purple {
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2),
+              0 0 30px rgba(168, 85, 247, 0.1),
+              0 0 60px rgba(168, 85, 247, 0.05),
+              inset 0 0 15px rgba(168, 85, 247, 0.05);
+}
+.glow-pink {
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.2),
+              0 0 30px rgba(236, 72, 153, 0.1),
+              0 0 60px rgba(236, 72, 153, 0.05);
+}
+.glow-green {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2),
+              0 0 30px rgba(16, 185, 129, 0.1),
+              0 0 60px rgba(16, 185, 129, 0.05);
+}
+
+/* ============================================
+   GRADIENT BORDERS
+   ============================================ */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.3), rgba(168, 85, 247, 0.3), rgba(236, 72, 153, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn-primary {
+  @apply relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(168, 85, 247, 0.15));
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  color: #e2e8f0;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(168, 85, 247, 0.25));
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), 0 0 40px rgba(168, 85, 247, 0.1);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  @apply relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.btn-danger {
+  @apply relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+}
+
+.btn-icon {
+  @apply p-2 rounded-lg transition-all duration-200;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+}
+
+/* ============================================
+   INPUT FIELDS
+   ============================================ */
+.input-field {
+  @apply w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 outline-none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.input-field:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.08);
+}
+.input-field::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+}
+
+/* ============================================
+   SELECT FIELDS
+   ============================================ */
+.select-field {
+  @apply w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 outline-none cursor-pointer appearance-none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+.select-field:focus {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+.select-field option {
+  background: #111127;
+  color: #e2e8f0;
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.card {
+  @apply rounded-xl p-4 transition-all duration-300;
+  background: var(--color-glass-light);
+  border: 1px solid var(--color-glass-border);
+}
+.card:hover {
+  background: var(--color-glass-medium);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.card-active {
+  border-color: rgba(0, 240, 255, 0.3) !important;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.08), inset 0 0 15px rgba(0, 240, 255, 0.03);
+}
+
+/* ============================================
+   DIVIDERS
+   ============================================ */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+}
+.badge-cyan {
+  background: rgba(0, 240, 255, 0.1);
+  color: #00f0ff;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+.badge-purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+.badge-green {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.badge-orange {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+.badge-red {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.badge-yellow {
+  background: rgba(250, 204, 21, 0.1);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+}
+.badge-pink {
+  background: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
+  border: 1px solid rgba(236, 72, 153, 0.2);
+}
+
+/* ============================================
+   TOOLTIP
+   ============================================ */
+.tooltip-wrapper {
+  @apply relative;
+}
+.tooltip-content {
+  @apply absolute z-50 px-3 py-1.5 rounded-lg text-xs font-medium pointer-events-none opacity-0 transition-opacity duration-200;
+  background: rgba(17, 17, 39, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.tooltip-wrapper:hover .tooltip-content {
+  opacity: 1;
+}
+
+/* ============================================
+   PANEL TRANSITIONS
+   ============================================ */
+.panel-left {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.panel-left.closed {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.panel-right {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.panel-right.closed {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* ============================================
+   BACKGROUND MESH GRADIENT
+   ============================================ */
+.bg-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(236, 72, 153, 0.02) 0%, transparent 50%),
+    var(--color-bg-primary);
+}
+
+/* ============================================
+   ANIMATED BACKGROUND DOTS
+   ============================================ */
+.bg-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* ============================================
+   SHIMMER LOADING
+   ============================================ */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ============================================
+   PULSE RING ANIMATION
+   ============================================ */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* ============================================
+   RESULT ANIMATION
+   ============================================ */
+@keyframes result-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.result-enter {
+  animation: result-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   TOGGLE SWITCH
+   ============================================ */
+.toggle {
+  @apply relative w-11 h-6 rounded-full cursor-pointer transition-colors duration-300;
+  background: rgba(255, 255, 255, 0.1);
+}
+.toggle.active {
+  background: rgba(0, 240, 255, 0.3);
+}
+.toggle::after {
+  content: '';
+  @apply absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform duration-300;
+  background: #e2e8f0;
+}
+.toggle.active::after {
+  transform: translateX(20px);
+  background: #00f0ff;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+/* ============================================
+   TAB BAR
+   ============================================ */
+.tab-bar {
+  @apply flex gap-1 p-1 rounded-lg;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tab-item {
+  @apply px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 cursor-pointer;
+  color: #64748b;
+}
+.tab-item:hover {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+}
+.tab-item.active {
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+}
+
+/* ============================================
+   ALGORITHM CARD COLORS
+   ============================================ */
+.algo-card-dfs { --algo-color: #10b981; }
+.algo-card-bfs { --algo-color: #3b82f6; }
+.algo-card-path { --algo-color: #8b5cf6; }
+.algo-card-connectivity { --algo-color: #06b6d4; }
+.algo-card-components { --algo-color: #f97316; }
+.algo-card-bipartite { --algo-color: #ec4899; }
+.algo-card-diameter { --algo-color: #facc15; }
+.algo-card-cycle { --algo-color: #ef4444; }
+.algo-card-girth { --algo-color: #a855f7; }
+
+.algo-card {
+  @apply rounded-xl p-3 cursor-pointer transition-all duration-300;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.algo-card:hover {
+  background: color-mix(in srgb, var(--algo-color) 8%, transparent);
+  border-color: color-mix(in srgb, var(--algo-color) 30%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--algo-color) 10%, transparent);
+  transform: translateY(-1px);
+}
+.algo-card .algo-icon {
+  color: var(--algo-color);
+}
+.algo-card .algo-badge {
+  background: color-mix(in srgb, var(--algo-color) 12%, transparent);
+  color: var(--algo-color);
+  border: 1px solid color-mix(in srgb, var(--algo-color) 25%, transparent);
+}
+
+/* ============================================
+   STAT CARD
+   ============================================ */
+.stat-card {
+  @apply rounded-lg p-3 text-center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.stat-value {
+  @apply text-2xl font-bold;
+  background: linear-gradient(135deg, #00f0ff, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.stat-label {
+  @apply text-xs text-gray-500 mt-0.5;
+}
+
+/* ============================================
+   ACCORDION
+   ============================================ */
+.accordion-header {
+  @apply flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200;
+  color: #94a3b8;
+}
+.accordion-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+.accordion-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+/* ============================================
+   NODE INFO TOOLTIP (3D)
+   ============================================ */
+.node-tooltip {
+  @apply px-3 py-2 rounded-lg text-xs;
+  background: rgba(10, 10, 26, 0.92);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 240, 255, 0.1);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .panel-left,
+  .panel-right {
+    position: absolute;
+    z-index: 40;
+  }
+}
+
+/* ============================================
+   TRANSITION UTILITIES
+   ============================================ */
+.transition-spring {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   GRID PATTERN BACKGROUND
+   ============================================ */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
