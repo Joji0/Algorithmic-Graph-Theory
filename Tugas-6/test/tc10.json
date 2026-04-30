@@ -3,26 +3,26 @@
   "weighted": true,
   "nodes": [
     "Pak Suryanto", "Ibu Melati", "Pak Firman", "Ibu Nurlita", "Pak Bambang",
-    "7A", "7B", "8A", "8B", "9A", "9B"
+    "IF1221", "IF2130", "IF2050", "IF3070", "IF4010", "IF3210"
   ],
   "edges": [
-    ["Pak Suryanto", "7A", 2],
-    ["Pak Suryanto", "8A", 1],
-    ["Pak Suryanto", "9A", 1],
-    ["Ibu Melati", "7B", 1],
-    ["Ibu Melati", "8B", 2],
-    ["Ibu Melati", "9B", 1],
-    ["Pak Firman", "7A", 1],
-    ["Pak Firman", "8A", 2],
-    ["Pak Firman", "9A", 1],
-    ["Ibu Nurlita", "7B", 2],
-    ["Ibu Nurlita", "8B", 1],
-    ["Ibu Nurlita", "9B", 1],
-    ["Pak Bambang", "7A", 1],
-    ["Pak Bambang", "7B", 1],
-    ["Pak Bambang", "8A", 1],
-    ["Pak Bambang", "8B", 1],
-    ["Pak Bambang", "9A", 1],
-    ["Pak Bambang", "9B", 1]
+    ["Pak Suryanto", "IF1221", 2],
+    ["Pak Suryanto", "IF2050", 1],
+    ["Pak Suryanto", "IF4010", 1],
+    ["Ibu Melati", "IF2130", 1],
+    ["Ibu Melati", "IF3070", 2],
+    ["Ibu Melati", "if3210", 1],
+    ["Pak Firman", "IF1221", 1],
+    ["Pak Firman", "IF2050", 2],
+    ["Pak Firman", "IF4010", 1],
+    ["Ibu Nurlita", "IF2130", 2],
+    ["Ibu Nurlita", "IF3070", 1],
+    ["Ibu Nurlita", "if3210", 1],
+    ["Pak Bambang", "IF1221", 1],
+    ["Pak Bambang", "IF2130", 1],
+    ["Pak Bambang", "IF2050", 1],
+    ["Pak Bambang", "IF3070", 1],
+    ["Pak Bambang", "IF4010", 1],
+    ["Pak Bambang", "if3210", 1]
   ]
 }

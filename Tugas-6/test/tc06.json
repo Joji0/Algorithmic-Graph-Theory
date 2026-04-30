@@ -1,15 +1,15 @@
 {
   "directed": false,
   "weighted": false,
-  "nodes": ["Agus", "Rina", "Doni", "Memasak", "Mengajar", "Mengemudi", "Menjahit", "Menulis"],
+  "nodes": ["Dr. Pertama", "Prof. Kedua", "Ketiga, M. Si.", "IF1230", "IF2240", "IF3170", "IF4062", "IF5010"],
   "edges": [
-    ["Agus", "Mengemudi"],
-    ["Agus", "Menulis"],
-    ["Rina", "Memasak"],
-    ["Rina", "Menjahit"],
-    ["Rina", "Mengajar"],
-    ["Doni", "Mengajar"],
-    ["Doni", "Menulis"],
-    ["Doni", "Mengemudi"]
+    ["Dr. Pertama", "IF3170"],
+    ["Dr. Pertama", "IF5010"],
+    ["Prof. Kedua", "IF1230"],
+    ["Prof. Kedua", "IF4062"],
+    ["Ketiga, M. Si.", "IF2240"],
+    ["Ketiga, M. Si.", "IF2240"],
+    ["Ketiga, M. Si.", "IF5010"],
+    ["Ketiga, M. Si.", "IF3170"]
   ]
 }

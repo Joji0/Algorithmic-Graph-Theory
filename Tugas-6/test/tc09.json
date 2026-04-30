@@ -2,23 +2,23 @@
   "directed": false,
   "weighted": true,
   "nodes": [
-    "Pak Ahmad", "Ibu Dewi", "Pak Hendra", "Ibu Rina",
-    "9A", "9B", "9C", "10A", "10B"
+    "Dr. First", "Prof. Second", "Third, Ph. D.", "Fourth, M. Si.",
+    "IF1210", "IF1230", "IF2150", "IF2211", "IF3140"
   ],
   "edges": [
-    ["Pak Ahmad", "9A", 1],
-    ["Pak Ahmad", "9B", 2],
-    ["Pak Ahmad", "9C", 1],
-    ["Pak Ahmad", "10A", 1],
-    ["Ibu Dewi", "9B", 1],
-    ["Ibu Dewi", "9C", 2],
-    ["Ibu Dewi", "10A", 1],
-    ["Ibu Dewi", "10B", 1],
-    ["Pak Hendra", "9A", 1],
-    ["Pak Hendra", "10A", 2],
-    ["Pak Hendra", "10B", 1],
-    ["Ibu Rina", "9C", 1],
-    ["Ibu Rina", "10A", 1],
-    ["Ibu Rina", "10B", 2]
+    ["Dr. First", "IF1210", 1],
+    ["Dr. First", "IF1230", 2],
+    ["Dr. First", "IF2150", 1],
+    ["Dr. First", "IF2211", 1],
+    ["Prof. Second", "IF1230", 1],
+    ["Prof. Second", "IF2150", 2],
+    ["Prof. Second", "IF2211", 1],
+    ["Prof. Second", "IF3140", 1],
+    ["Third, Ph. D.", "IF1210", 1],
+    ["Third, Ph. D.", "IF2211", 2],
+    ["Third, Ph. D.", "IF3140", 1],
+    ["Fourth, M. Si.", "IF2150", 1],
+    ["Fourth, M. Si.", "IF2211", 1],
+    ["Fourth, M. Si.", "IF3140", 2]
   ]
 }

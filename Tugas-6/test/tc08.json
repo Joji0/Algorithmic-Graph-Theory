@@ -3,20 +3,20 @@
   "weighted": true,
   "nodes": [
     "Ibu Siti", "Pak Budi", "Ibu Ratna",
-    "10A", "10B", "11A", "11B"
+    "IF2130", "IF2240", "IF3150", "IF3270"
   ],
   "edges": [
-    ["Ibu Siti", "10A", 1],
-    ["Ibu Siti", "10B", 1],
-    ["Ibu Siti", "11A", 1],
-    ["Ibu Siti", "11B", 1],
-    ["Pak Budi", "10A", 1],
-    ["Pak Budi", "10B", 1],
-    ["Pak Budi", "11A", 1],
-    ["Pak Budi", "11B", 1],
-    ["Ibu Ratna", "10A", 1],
-    ["Ibu Ratna", "10B", 1],
-    ["Ibu Ratna", "11A", 1],
-    ["Ibu Ratna", "11B", 1]
+    ["Ibu Siti", "IF2130", 1],
+    ["Ibu Siti", "IF2240", 1],
+    ["Ibu Siti", "IF3150", 1],
+    ["Ibu Siti", "IF3270", 1],
+    ["Pak Budi", "IF2130", 1],
+    ["Pak Budi", "IF2240", 1],
+    ["Pak Budi", "IF3150", 1],
+    ["Pak Budi", "IF3270", 1],
+    ["Ibu Ratna", "IF2130", 1],
+    ["Ibu Ratna", "IF2240", 1],
+    ["Ibu Ratna", "IF3150", 1],
+    ["Ibu Ratna", "IF3270", 1]
   ]
 }

@@ -2,25 +2,25 @@
   "directed": false,
   "weighted": false,
   "nodes": [
-    "Hendra", "Wahyu", "Ratna", "Fajar", "Indah", "Rizky",
-    "Analisis", "Coding", "Pengujian", "Desain", "Pemasaran", "Keuangan", "Humas", "Operasi", "Riset"
+    "Dr. Satu", "Prof. Kedua", "Ketiga, Ph. D", "Empat, M. Si", "Ir. Lima", "Enam, S. T.",
+    "IF1210", "IF1230", "IF2150", "IF2211", "IF3140", "IF3170", "IF4062", "IF4031", "IF5010"
   ],
   "edges": [
-    ["Hendra", "Analisis"],
-    ["Hendra", "Coding"],
-    ["Wahyu", "Coding"],
-    ["Wahyu", "Pengujian"],
-    ["Ratna", "Desain"],
-    ["Ratna", "Pemasaran"],
-    ["Ratna", "Humas"],
-    ["Fajar", "Keuangan"],
-    ["Fajar", "Operasi"],
-    ["Fajar", "Riset"],
-    ["Indah", "Analisis"],
-    ["Indah", "Desain"],
-    ["Indah", "Riset"],
-    ["Rizky", "Pemasaran"],
-    ["Rizky", "Humas"],
-    ["Rizky", "Keuangan"]
+    ["Dr. Satu", "IF1210"],
+    ["Dr. Satu", "IF1230"],
+    ["Prof. Kedua", "IF1230"],
+    ["Prof. Kedua", "IF2150"],
+    ["Ketiga, Ph. D", "IF2211"],
+    ["Ketiga, Ph. D", "IF3140"],
+    ["Ketiga, Ph. D", "IF4062"],
+    ["Empat, M. Si", "IF3170"],
+    ["Empat, M. Si", "IF4031"],
+    ["Empat, M. Si", "IF5010"],
+    ["Ir. Lima", "IF1210"],
+    ["Ir. Lima", "IF2211"],
+    ["Ir. Lima", "IF5010"],
+    ["Enam, S. T.", "IF3140"],
+    ["Enam, S. T.", "IF4062"],
+    ["Enam, S. T.", "IF3170"]
   ]
 }
