@@ -11,12 +11,13 @@ interface Node3DProps {
   color: string;
   isSelected: boolean;
   isHovered: boolean;
+  numericLabel?: number | null;
   onClick: () => void;
   onPointerOver: () => void;
   onPointerOut: () => void;
 }
 
-function Node3D({ name, position, color, isSelected, isHovered, onClick, onPointerOver, onPointerOut }: Node3DProps) {
+function Node3D({ name, position, color, isSelected, isHovered, numericLabel, onClick, onPointerOver, onPointerOut }: Node3DProps) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const glowRef = useRef<THREE.Mesh>(null!);
   const ringRef = useRef<THREE.Mesh>(null!);
@@ -106,6 +107,25 @@ function Node3D({ name, position, color, isSelected, isHovered, onClick, onPoint
       >
         {name}
       </Text>
+
+      {numericLabel != null && (
+        <group position={[0.45, 0.45, 0]}>
+          <mesh>
+            <sphereGeometry args={[0.18, 16, 16]} />
+            <meshStandardMaterial color="#facc15" emissive="#facc15" emissiveIntensity={0.6} />
+          </mesh>
+          <Text
+            position={[0, 0, 0.19]}
+            fontSize={0.22}
+            color="#0f172a"
+            anchorX="center"
+            anchorY="middle"
+            fontWeight="bold"
+          >
+            {String(numericLabel)}
+          </Text>
+        </group>
+      )}
 
       {(isHovered || isSelected) && (
         <Html
@@ -256,6 +276,7 @@ export default function GraphCanvas3D() {
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
   const setHoveredNode = useGraphStore((s) => s.setHoveredNode);
   const showEdgeWeights = useGraphStore((s) => s.showEdgeWeights);
+  const nodeLabels = useGraphStore((s) => s.nodeLabels);
 
   const defaultNodeColor = '#00f0ff';
   const defaultEdgeColor = '#334155';
@@ -344,6 +365,7 @@ export default function GraphCanvas3D() {
               color={getNodeColor(name)}
               isSelected={selectedNode === name}
               isHovered={hoveredNode === name}
+              numericLabel={nodeLabels[name] ?? null}
               onClick={() => setSelectedNode(selectedNode === name ? null : name)}
               onPointerOver={() => setHoveredNode(name)}
               onPointerOut={() => setHoveredNode(null)}

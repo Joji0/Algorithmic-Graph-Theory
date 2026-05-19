@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { Graph, Grid, PresetGraphs } from '../core/Graph';
 import { GraphAlgorithms, AlgorithmStepEvent } from '../core/GraphAlgorithms';
+import {
+  Timetable,
+  TimetablePresets,
+  scheduleTimetable,
+  TimetableScheduleResult,
+} from '../core/Timetable';
 
 export interface NodePosition {
   x: number;
@@ -13,6 +19,10 @@ export interface NodePosition {
 
 export interface NodeColorMap {
   [nodeName: string]: string;
+}
+
+export interface NodeLabelMap {
+  [nodeName: string]: number | null;
 }
 
 export interface EdgeColorMap {
@@ -50,6 +60,7 @@ interface GraphState {
   gridGraph: Grid | null;
   positions: Map<string, NodePosition>;
   nodeColors: NodeColorMap;
+  nodeLabels: NodeLabelMap;
   edgeColors: EdgeColorMap;
   selectedNode: string | null;
   hoveredNode: string | null;
@@ -61,7 +72,7 @@ interface GraphState {
   rightPanelOpen: boolean;
   animationSpeed: number;
   viewMode: '2d' | '3d';
-  graphMode: 'undirected' | 'directed' | 'island';
+  graphMode: 'undirected' | 'directed' | 'island' | 'timetable';
   islandGrid: Grid;
   islandColors: number[];  // per-cell island id for coloring after counting
   islandFinalColors: number[];
@@ -73,6 +84,10 @@ interface GraphState {
   isIslandAnimating: boolean;
   islandAnimationSpeed: number;
   showEdgeWeights: boolean;
+
+  // Timetable mode state
+  timetable: Timetable;
+  timetableResult: TimetableScheduleResult | null;
 
   setGraph: (graph: Graph) => void;
   loadPreset: (name: string) => void;
@@ -87,6 +102,8 @@ interface GraphState {
   updatePosition: (name: string, pos: Partial<NodePosition>) => void;
   initPositions: () => void;
   setNodeColor: (name: string, color: string) => void;
+  setNodeLabel: (name: string, label: number | null) => void;
+  setNodeLabels: (labels: NodeLabelMap) => void;
   setEdgeColor: (from: string, to: string, color: string) => void;
   clearColors: () => void;
   runAlgorithm: (algorithm: string, startNode?: string, endNode?: string) => void;
@@ -101,7 +118,7 @@ interface GraphState {
   setGridGraph: (grid: Grid | null) => void;
   setGraphWeighted: (weighted: boolean) => void;
   setShowEdgeWeights: (show: boolean) => void;
-  setGraphMode: (mode: 'undirected' | 'directed' | 'island') => void;
+  setGraphMode: (mode: 'undirected' | 'directed' | 'island' | 'timetable') => void;
   setIslandGrid: (rows: number, cols: number) => void;
   toggleIslandCell: (row: number, col: number) => void;
   paintIslandCell: (row: number, col: number, value: boolean) => void;
@@ -112,6 +129,22 @@ interface GraphState {
   setIslandAnimationSpeed: (ms: number) => void;
   importJSON: (json: string) => void;
   exportJSON: () => string;
+
+  // Timetable actions
+  loadTimetablePreset: (name: 'smallIF' | 'mediumIF' | 'largeIF') => void;
+  clearTimetable: () => void;
+  addTimetableLecturer: (name: string) => void;
+  addTimetableCourse: (name: string, code?: string) => void;
+  addTimetableClass: (name: string) => void;
+  addTimetableAssignment: (lecturerId: string, courseId: string, classId: string, sessions: number) => void;
+  removeTimetableLecturer: (id: string) => void;
+  removeTimetableCourse: (id: string) => void;
+  removeTimetableClass: (id: string) => void;
+  removeTimetableAssignment: (id: string) => void;
+  setTimetableSlots: (slots: number) => void;
+  runTimetableSchedule: () => void;
+  importTimetableJSON: (json: string) => void;
+  exportTimetableJSON: () => string;
 }
 
 function randomPosition(scale: number = 8): NodePosition {
@@ -155,6 +188,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   gridGraph: null,
   positions: new Map(),
   nodeColors: {},
+  nodeLabels: {},
   edgeColors: {},
   selectedNode: null,
   hoveredNode: null,
@@ -170,9 +204,13 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   showEdgeWeights: true,
   ...buildEmptyIslandState(initialGrid),
 
+  // Timetable initial state
+  timetable: TimetablePresets.smallIF(),
+  timetableResult: null,
+
   setGraph: (graph: Graph) => {
     const positions = generatePositions(graph);
-    set({ graph, positions, nodeColors: {}, edgeColors: {}, selectedNode: null, hoveredNode: null });
+    set({ graph, positions, nodeColors: {}, nodeLabels: {}, edgeColors: {}, selectedNode: null, hoveredNode: null });
   },
 
   loadPreset: (name: string) => {
@@ -237,7 +275,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       default: graph = PresetGraphs.petersen(); break;
     }
     const positions = generatePositions(graph);
-    set({ graph, positions, nodeColors: {}, edgeColors: {}, selectedNode: null, isAnimating: false, animationSteps: [], currentStepIndex: 0 });
+    set({ graph, positions, nodeColors: {}, nodeLabels: {}, edgeColors: {}, selectedNode: null, isAnimating: false, animationSteps: [], currentStepIndex: 0 });
   },
 
   addNode: (name: string) => {
@@ -279,6 +317,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       graph: new Graph(false),
       positions: new Map(),
       nodeColors: {},
+      nodeLabels: {},
       edgeColors: {},
       selectedNode: null,
       hoveredNode: null,
@@ -322,6 +361,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     set((state) => ({ nodeColors: { ...state.nodeColors, [name]: color } }));
   },
 
+  setNodeLabel: (name: string, label: number | null) => {
+    set((state) => ({ nodeLabels: { ...state.nodeLabels, [name]: label } }));
+  },
+
+  setNodeLabels: (labels: NodeLabelMap) => {
+    set({ nodeLabels: { ...labels } });
+  },
+
   setEdgeColor: (from: string, to: string, color: string) => {
     const key = `${from}-${to}`;
     const keyReverse = `${to}-${from}`;
@@ -330,7 +377,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     }));
   },
 
-  clearColors: () => set({ nodeColors: {}, edgeColors: {} }),
+  clearColors: () => set({ nodeColors: {}, nodeLabels: {}, edgeColors: {} }),
 
   runAlgorithm: (algorithm: string, startNode?: string, endNode?: string) => {
     const { graph } = get();
@@ -558,6 +605,42 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           }
           break;
         }
+        case 'bandwidth': {
+          const result = GraphAlgorithms.bandwidth(graph);
+          if (graph.isEmpty) {
+            resultMessage = 'Graf kosong';
+            details = ['Tidak ada vertex untuk dihitung.'];
+            break;
+          }
+          resultMessage = `Bandwidth: ${result.bandwidth}` +
+            (result.initialBandwidth !== result.bandwidth
+              ? ` (turun dari ${result.initialBandwidth})`
+              : '');
+          const labelLines = result.ordering.map((name) =>
+            `${name} → ${result.labels.get(name)}`
+          );
+          const swapLines = result.swaps.length === 0
+            ? ['(tidak ada penukaran yang memperbaiki)']
+            : result.swaps.map((s, i) =>
+                `Tukar ${i + 1}: ${s.a} ↔ ${s.b} (bandwidth ${s.beforeBw} → ${s.afterBw})`
+              );
+          details = [
+            `Jumlah vertex: ${result.size}`,
+            `Mulai labeling dari: ${result.seed ?? '-'}`,
+            `Bandwidth awal: ${result.initialBandwidth}`,
+            `Bandwidth akhir: ${result.bandwidth}`,
+            result.criticalEdge
+              ? `Edge dengan selisih label terbesar: ${result.criticalEdge[0]} – ${result.criticalEdge[1]}`
+              : 'Tidak ada edge.',
+            '',
+            'Label tiap vertex (urut label naik):',
+            ...labelLines,
+            '',
+            'Penukaran yang dilakukan:',
+            ...swapLines,
+          ];
+          break;
+        }
         case 'timetabling': {
           const result = GraphAlgorithms.timetableEdgeColouring(graph, 3);
           if (!result.isBipartite) {
@@ -615,6 +698,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         tspGreedy: 'TSP (Greedy Nearest Neighbor)',
         personnelAssignment: 'Penugasan Personel (M-Alternating Tree)',
         timetabling: 'Jadwal Kelas (Edge Colouring)',
+        bandwidth: 'Bandwidth',
       };
 
       set({
@@ -672,7 +756,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     }
   },
 
-  setGraphMode: (mode: 'undirected' | 'directed' | 'island') => {
+  setGraphMode: (mode: 'undirected' | 'directed' | 'island' | 'timetable') => {
     if (mode === 'undirected') {
       const { graph } = get();
       if (graph.isDirected) {
@@ -693,6 +777,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       } else {
         set({ graphMode: mode });
       }
+    } else if (mode === 'timetable') {
+      set({ graphMode: mode });
     } else {
       const gridCopy = get().islandGrid.clone();
       set({ graphMode: mode, ...buildEmptyIslandState(gridCopy) });
@@ -819,7 +905,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       const data = JSON.parse(json);
       const graph = Graph.fromJSON(data);
       const positions = generatePositions(graph);
-      set({ graph, positions, nodeColors: {}, edgeColors: {}, selectedNode: null });
+      set({ graph, positions, nodeColors: {}, nodeLabels: {}, edgeColors: {}, selectedNode: null });
     } catch {
       throw new Error('Invalid JSON format');
     }
@@ -828,5 +914,148 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   exportJSON: () => {
     const { graph } = get();
     return JSON.stringify(graph.toJSON(), null, 2);
+  },
+
+  /* ========================================================
+     TIMETABLE ACTIONS
+     ======================================================== */
+  loadTimetablePreset: (name) => {
+    const tt =
+      name === 'smallIF' ? TimetablePresets.smallIF() :
+      name === 'mediumIF' ? TimetablePresets.mediumIF() :
+      TimetablePresets.largeIF();
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  clearTimetable: () => {
+    const tt = new Timetable();
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  addTimetableLecturer: (name) => {
+    const tt = get().timetable.clone();
+    tt.addLecturer(name);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  addTimetableCourse: (name, code) => {
+    const tt = get().timetable.clone();
+    tt.addCourse(name, code);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  addTimetableClass: (name) => {
+    const tt = get().timetable.clone();
+    tt.addClass(name);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  addTimetableAssignment: (lecturerId, courseId, classId, sessions) => {
+    const tt = get().timetable.clone();
+    tt.addAssignment(lecturerId, courseId, classId, sessions);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  removeTimetableLecturer: (id) => {
+    const tt = get().timetable.clone();
+    tt.removeLecturer(id);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  removeTimetableCourse: (id) => {
+    const tt = get().timetable.clone();
+    tt.removeCourse(id);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  removeTimetableClass: (id) => {
+    const tt = get().timetable.clone();
+    tt.removeClass(id);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  removeTimetableAssignment: (id) => {
+    const tt = get().timetable.clone();
+    tt.removeAssignment(id);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  setTimetableSlots: (slots) => {
+    const tt = get().timetable.clone();
+    tt.setSlotsPerCycle(slots);
+    set({ timetable: tt, timetableResult: null });
+  },
+
+  runTimetableSchedule: () => {
+    const tt = get().timetable;
+    const result = scheduleTimetable(tt);
+    set({ timetableResult: result });
+
+    const lecturerNames = (id: string) => tt.getLecturer(id)?.name ?? id;
+    const classNames = (id: string) => tt.getClass(id)?.name ?? id;
+    const courseNames = (id: string) => tt.getCourse(id)?.name ?? id;
+
+    const message = result.feasible
+      ? `Jadwal feasible — ${result.slotsUsed} slot dipakai dari ${result.slotsRequested} tersedia.`
+      : `Tidak feasible — ${result.conflicts.length} konflik / ${result.unscheduled.length} sesi tidak terjadwal.`;
+
+    const details: string[] = [];
+    details.push(`Total sesi: ${result.totalSessions}`);
+    details.push(`Slot tersedia: ${result.slotsRequested}`);
+    details.push(`Slot terpakai: ${result.slotsUsed}`);
+    details.push(`Slot minimum (max degree): ${result.minSlotsNeeded}`);
+    details.push(`Beban max dosen: ${result.maxLecturerLoad}`);
+    details.push(`Beban max kelas: ${result.maxClassLoad}`);
+    details.push('');
+    if (result.conflicts.length > 0) {
+      details.push('Konflik:');
+      for (const c of result.conflicts) details.push(`  • ${c.message}`);
+      details.push('');
+    }
+    if (result.unscheduled.length > 0) {
+      details.push('Tidak terjadwal:');
+      for (const u of result.unscheduled) {
+        const a = tt.getAssignment(u.assignmentId);
+        if (a) {
+          details.push(`  • ${lecturerNames(a.lecturerId)} – ${courseNames(a.courseId)} → ${classNames(a.classId)} (sisa ${u.remaining} sesi)`);
+        }
+      }
+      details.push('');
+    }
+    details.push('Jadwal per slot:');
+    for (let s = 0; s < result.slotsRequested; s++) {
+      const sessions = result.scheduled.filter((x) => x.slot === s);
+      if (sessions.length === 0) {
+        details.push(`  Slot ${s + 1}: (kosong)`);
+      } else {
+        const formatted = sessions.map((x) =>
+          `${classNames(x.classId)} ← ${courseNames(x.courseId)} (${lecturerNames(x.lecturerId)})`
+        ).join(', ');
+        details.push(`  Slot ${s + 1}: ${formatted}`);
+      }
+    }
+
+    get().addResult({
+      algorithm: 'timetableSchedule',
+      title: 'Jadwal Kuliah (Timetabling)',
+      message,
+      details,
+      timestamp: Date.now(),
+    });
+  },
+
+  importTimetableJSON: (json) => {
+    try {
+      const data = JSON.parse(json);
+      const tt = Timetable.fromJSON(data);
+      set({ timetable: tt, timetableResult: null });
+    } catch {
+      throw new Error('Invalid timetable JSON format');
+    }
+  },
+
+  exportTimetableJSON: () => {
+    const { timetable } = get();
+    return JSON.stringify(timetable.toJSON(), null, 2);
   },
 }));

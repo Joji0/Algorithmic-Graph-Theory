@@ -11,6 +11,7 @@ import {
 import GraphCanvas3D from './components/canvas/GraphCanvas3D';
 import GraphCanvas2D from './components/canvas/GraphCanvas2D';
 import IslandCanvas from './components/canvas/IslandCanvas';
+import TimetableCanvas from './components/canvas/TimetableCanvas';
 import { ResultDetailsModal } from './components/ResultDetailsModal';
 import { useGraphStore } from './store/useGraphStore';
 import { Grid } from './core/Graph';
@@ -75,9 +76,6 @@ const PRESETS = [
   { id: 'assignKaryawan44', name: 'Penugasan 4×4', icon: Users, desc: '4 karyawan × 4 pekerjaan (bipartit)', badge: 'Penugasan' },
   { id: 'assignKaryawan35', name: 'Penugasan 3×5', icon: Users, desc: '3 karyawan × 5 pekerjaan (bipartit)', badge: 'Penugasan' },
   { id: 'assignKaryawan69', name: 'Penugasan 6×9', icon: Users, desc: '6 karyawan × 9 pekerjaan (bipartit)', badge: 'Penugasan' },
-  { id: 'timetableExample34', name: 'Jadwal 3×4', icon: Calendar, desc: '3 guru × 4 kelas', badge: 'Jadwal' },
-  { id: 'timetableExample45', name: 'Jadwal 4×5', icon: Calendar, desc: '4 guru × 5 kelas (beban bervariasi)', badge: 'Jadwal' },
-  { id: 'timetableExample56', name: 'Jadwal 5×6', icon: Calendar, desc: '5 guru × 6 kelas (kompleks)', badge: 'Jadwal' },
 ];
 
 /* ============================================
@@ -167,11 +165,11 @@ const ALGORITHMS = [
     needsStart: false, needsEnd: false, category: 'matching',
   },
   {
-    id: 'timetabling',
-    name: 'Jadwal Kelas',
-    desc: 'Edge colouring pada bipartit (Guru × Kelas) dengan penyeimbangan periode',
-    icon: Calendar, badge: 'Scheduling', cardClass: 'algo-card-bipartite',
-    needsStart: false, needsEnd: false, category: 'matching',
+    id: 'bandwidth',
+    name: 'Graph Bandwidth',
+    desc: 'Beri label 1..n ke tiap vertex, minimisasi selisih label terbesar antar vertex bertetangga',
+    icon: Ruler, badge: 'Labelling', cardClass: 'algo-card-diameter',
+    needsStart: false, needsEnd: false, category: 'property',
   },
 ];
 
@@ -187,6 +185,29 @@ const CATEGORIES = [
 /* ============================================
    HEADER COMPONENT
    ============================================ */
+function TimetableHeaderStats() {
+  const tt = useGraphStore((s) => s.timetable);
+  return (
+    <div className="flex items-center gap-3 text-xs text-gray-400">
+      <div className="stat-card !p-1.5 !px-3 flex items-center gap-2">
+        <Users className="w-3 h-3 text-neon-cyan" />
+        <span className="font-mono">{tt.lecturers.length}</span>
+        <span className="text-gray-500">dosen</span>
+      </div>
+      <div className="stat-card !p-1.5 !px-3 flex items-center gap-2">
+        <Calendar className="w-3 h-3 text-neon-purple" />
+        <span className="font-mono">{tt.classes.length}</span>
+        <span className="text-gray-500">kelas</span>
+      </div>
+      <div className="stat-card !p-1.5 !px-3 flex items-center gap-2">
+        <GitBranch className="w-3 h-3 text-neon-orange" />
+        <span className="font-mono">{tt.assignments.length}</span>
+        <span className="text-gray-500">penugasan</span>
+      </div>
+    </div>
+  );
+}
+
 function Header() {
   const graph = useGraphStore((s) => s.graph);
   const isAnimating = useGraphStore((s) => s.isAnimating);
@@ -236,9 +257,15 @@ function Header() {
             >
               <Grid3x3 className="w-3 h-3 inline mr-1" />Island
             </button>
+            <button
+              onClick={() => setGraphMode('timetable')}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${graphMode === 'timetable' ? 'bg-neon-purple/15 text-neon-purple' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              <Calendar className="w-3 h-3 inline mr-1" />Timetable
+            </button>
           </div>
 
-          {graph.isWeighted && graphMode !== 'island' && (
+          {graph.isWeighted && graphMode !== 'island' && graphMode !== 'timetable' && (
             <div className="flex items-center gap-1 stat-card !p-0.5 px-2">
               <input
                 type="checkbox"
@@ -254,7 +281,17 @@ function Header() {
           )}
 
           {/* Stats */}
-          {graphMode !== 'island' ? (
+          {graphMode === 'island' ? (
+            <div className="flex items-center gap-3 text-xs text-gray-400">
+              <div className="stat-card !p-1.5 !px-3 flex items-center gap-2">
+                <Grid3x3 className="w-3 h-3 text-neon-cyan" />
+                <span className="font-mono">{islandGrid.rows}×{islandGrid.cols}</span>
+                <span className="text-gray-500">grid</span>
+              </div>
+            </div>
+          ) : graphMode === 'timetable' ? (
+            <TimetableHeaderStats />
+          ) : (
             <div className="flex items-center gap-3 text-xs text-gray-400">
               <div className="stat-card !p-1.5 !px-3 flex items-center gap-2">
                 <CircleDot className="w-3 h-3 text-neon-cyan" />
@@ -267,18 +304,10 @@ function Header() {
                 <span className="text-gray-500">edges</span>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-3 text-xs text-gray-400">
-              <div className="stat-card !p-1.5 !px-3 flex items-center gap-2">
-                <Grid3x3 className="w-3 h-3 text-neon-cyan" />
-                <span className="font-mono">{islandGrid.rows}×{islandGrid.cols}</span>
-                <span className="text-gray-500">grid</span>
-              </div>
-            </div>
           )}
 
           {/* 2D/3D toggle — only for graph modes */}
-          {graphMode !== 'island' && (
+          {graphMode !== 'island' && graphMode !== 'timetable' && (
             <div className="flex items-center gap-1 stat-card !p-0.5">
               <button
                 onClick={() => setViewMode('2d')}
@@ -1122,18 +1151,22 @@ export default function App() {
   return (
     <div className="w-screen h-screen bg-mesh bg-dots overflow-hidden relative">
       <Header />
-      {graphMode !== 'island' && <LeftPanel />}
-      {graphMode !== 'island' && <RightPanel />}
+      {graphMode !== 'island' && graphMode !== 'timetable' && <LeftPanel />}
+      {graphMode !== 'island' && graphMode !== 'timetable' && <RightPanel />}
 
-      <main className="absolute inset-0 pt-14">
-        {graphMode === 'island' ? (
-          <IslandCanvas />
-        ) : viewMode === '3d' ? (
-          <GraphCanvas3D />
-        ) : (
-          <GraphCanvas2D />
-        )}
-      </main>
+      {graphMode === 'timetable' ? (
+        <TimetableCanvas />
+      ) : (
+        <main className="absolute inset-0 pt-14">
+          {graphMode === 'island' ? (
+            <IslandCanvas />
+          ) : viewMode === '3d' ? (
+            <GraphCanvas3D />
+          ) : (
+            <GraphCanvas2D />
+          )}
+        </main>
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ export default function GraphCanvas2D() {
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
   const setHoveredNode = useGraphStore((s) => s.setHoveredNode);
   const showEdgeWeights = useGraphStore((s) => s.showEdgeWeights);
+  const nodeLabels = useGraphStore((s) => s.nodeLabels);
 
   const panRef = useRef({ x: 0, y: 0 });
   const zoomRef = useRef(30);
@@ -197,8 +198,34 @@ export default function GraphCanvas2D() {
       ctx.strokeStyle = 'rgba(15,23,42,0.85)';
       ctx.strokeText(name, s.x, s.y - radius - 6);
       ctx.fillText(name, s.x, s.y - radius - 6);
+
+      // Numeric label badge (e.g. for bandwidth labelling)
+      const numLabel = nodeLabels[name];
+      if (numLabel != null) {
+        const badgeR = radius + 8;
+        const bx = s.x + radius + 6;
+        const by = s.y - radius - 6;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(bx, by, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '800 12px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(numLabel), bx, by + 0.5);
+        ctx.restore();
+        void badgeR;
+      }
     }
-  }, [graph, positions, nodeColors, edgeColors, selectedNode, hoveredNode, showEdgeWeights, worldToScreen]);
+  }, [graph, positions, nodeColors, edgeColors, selectedNode, hoveredNode, showEdgeWeights, nodeLabels, worldToScreen]);
 
   useEffect(() => {
     const container = containerRef.current;

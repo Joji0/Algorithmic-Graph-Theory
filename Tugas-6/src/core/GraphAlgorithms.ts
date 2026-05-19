@@ -133,13 +133,47 @@ export interface TimeTableingResult {
   balanceDetails: string;
 }
 
+export interface BandwidthResult {
+  /** label assigned to each node name (1..n) — FINAL state after swaps */
+  labels: Map<string, number>;
+  /** order of node names sorted by their final label ascending */
+  ordering: string[];
+  /** label assigned to each node by the initial BFS labelling, BEFORE swaps */
+  initialLabels: Map<string, number>;
+  /** order of node names sorted by their initial BFS label */
+  initialOrdering: string[];
+  /** the bandwidth value = max |labels[u] - labels[v]| over all edges */
+  bandwidth: number;
+  /** the edge that realises the maximum stretch (one of them, if any) */
+  criticalEdge: [string, string] | null;
+  /** the edge that realises the maximum stretch in the INITIAL labelling */
+  initialCriticalEdge: [string, string] | null;
+  /** initial bandwidth from heuristic, before local-search improvements */
+  initialBandwidth: number;
+  /** swap log for animation / explanation */
+  swaps: Array<{
+    a: string;          // node A name
+    b: string;          // node B name
+    beforeBw: number;
+    afterBw: number;
+  }>;
+  /** which seed node was used for the BFS initial labelling */
+  seed: string | null;
+  /** size of node set considered (excludes isolated trivially) */
+  size: number;
+}
+
 export interface AlgorithmStepEvent {
-  type: 'visit' | 'enqueue' | 'dequeue' | 'backtrack' | 'highlight-edge' | 'highlight-node' | 'color-node' | 'color-edge' | 'result';
+  type: 'visit' | 'enqueue' | 'dequeue' | 'backtrack' | 'highlight-edge' | 'highlight-node' | 'color-node' | 'color-edge' | 'result' | 'set-label' | 'swap-labels' | 'clear-labels';
   nodes?: string[];
   edges?: Array<[string, string]>;
   color?: string;
   message?: string;
   delay?: number;
+  /** For 'set-label' steps: the numeric labels to assign to nodes[i]. */
+  labels?: number[];
+  /** For 'swap-labels' steps: the two node names whose labels swap. */
+  swap?: [string, string];
 }
 
 export class GraphAlgorithms {
@@ -1185,6 +1219,180 @@ export class GraphAlgorithms {
       isValid,
       timetable,
       balanceDetails,
+    };
+  }
+
+  /**
+   * Graph Bandwidth (NP-hard) — heuristik sederhana.
+   *
+   *   1. Beri label awal 1..n via BFS dari vertex paling jarang
+   *      tetangganya (degree terkecil).
+   *   2. Coba tukar label setiap pasangan vertex (i, j); kalau hasilnya
+   *      bikin bandwidth lebih kecil, terima. Ulangi sampai tidak ada
+   *      tukaran yang memperbaiki lagi.
+   */
+  static bandwidth(graph: Graph): BandwidthResult {
+    const n = graph.size;
+    if (n === 0) {
+      return {
+        labels: new Map(),
+        ordering: [],
+        initialLabels: new Map(),
+        initialOrdering: [],
+        bandwidth: 0,
+        criticalEdge: null,
+        initialCriticalEdge: null,
+        initialBandwidth: 0,
+        swaps: [],
+        seed: null,
+        size: 0,
+      };
+    }
+
+    // Build undirected adjacency on ids (treat directed as undirected for bandwidth).
+    const adj: number[][] = Array.from({ length: n }, () => []);
+    for (let u = 0; u < n; u++) {
+      const seen = new Set<number>();
+      for (const v of graph.getAdjList(u)) {
+        if (v !== u && !seen.has(v)) {
+          seen.add(v);
+          adj[u].push(v);
+        }
+      }
+    }
+    if (graph.isDirected) {
+      for (let u = 0; u < n; u++) {
+        for (const v of adj[u]) {
+          if (!adj[v].includes(u)) adj[v].push(u);
+        }
+      }
+    }
+
+    const degree = adj.map((a) => a.length);
+
+    // Pick seed: lowest-degree vertex (ties broken by id).
+    let seedId = 0;
+    for (let i = 1; i < n; i++) {
+      if (degree[i] < degree[seedId]) seedId = i;
+    }
+
+    // Plain BFS labelling 1..n.
+    const labelOfId = new Array<number>(n).fill(-1);
+    let nextLabel = 1;
+    const visited = new Array<boolean>(n).fill(false);
+
+    const bfsFrom = (start: number) => {
+      const queue: number[] = [start];
+      visited[start] = true;
+      labelOfId[start] = nextLabel++;
+      while (queue.length > 0) {
+        const u = queue.shift()!;
+        for (const v of adj[u]) {
+          if (!visited[v]) {
+            visited[v] = true;
+            labelOfId[v] = nextLabel++;
+            queue.push(v);
+          }
+        }
+      }
+    };
+
+    bfsFrom(seedId);
+    for (let i = 0; i < n; i++) if (!visited[i]) bfsFrom(i);
+
+    const computeBwAndCritical = (): { bw: number; critU: number; critV: number } => {
+      let bw = 0;
+      let critU = -1;
+      let critV = -1;
+      for (let u = 0; u < n; u++) {
+        for (const v of adj[u]) {
+          if (v <= u) continue;
+          const diff = Math.abs(labelOfId[u] - labelOfId[v]);
+          if (diff > bw) {
+            bw = diff;
+            critU = u;
+            critV = v;
+          }
+        }
+      }
+      return { bw, critU, critV };
+    };
+
+    let { bw, critU, critV } = computeBwAndCritical();
+    const initialBandwidth = bw;
+    const initialCritU = critU;
+    const initialCritV = critV;
+
+    // Snapshot initial labels (post-BFS, pre-swap)
+    const initialLabelOfId = labelOfId.slice();
+
+    // Local search: try every pair, keep any swap that strictly reduces bw.
+    const swaps: BandwidthResult['swaps'] = [];
+    let improved = true;
+    while (improved && bw > 0) {
+      improved = false;
+      outer:
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const li = labelOfId[i];
+          const lj = labelOfId[j];
+          labelOfId[i] = lj;
+          labelOfId[j] = li;
+          const after = computeBwAndCritical();
+          if (after.bw < bw) {
+            const before = bw;
+            bw = after.bw;
+            critU = after.critU;
+            critV = after.critV;
+            swaps.push({
+              a: graph.getName(i),
+              b: graph.getName(j),
+              beforeBw: before,
+              afterBw: after.bw,
+            });
+            improved = true;
+            break outer;
+          }
+          labelOfId[i] = li;
+          labelOfId[j] = lj;
+        }
+      }
+    }
+
+    const labels = new Map<string, number>();
+    for (let i = 0; i < n; i++) labels.set(graph.getName(i), labelOfId[i]);
+
+    const ordering = [...graph.nodeNames].sort(
+      (a, b) => (labels.get(a) ?? 0) - (labels.get(b) ?? 0)
+    );
+
+    const initialLabels = new Map<string, number>();
+    for (let i = 0; i < n; i++) initialLabels.set(graph.getName(i), initialLabelOfId[i]);
+
+    const initialOrdering = [...graph.nodeNames].sort(
+      (a, b) => (initialLabels.get(a) ?? 0) - (initialLabels.get(b) ?? 0)
+    );
+
+    const criticalEdge: [string, string] | null =
+      critU >= 0 && critV >= 0 ? [graph.getName(critU), graph.getName(critV)] : null;
+
+    const initialCriticalEdge: [string, string] | null =
+      initialCritU >= 0 && initialCritV >= 0
+        ? [graph.getName(initialCritU), graph.getName(initialCritV)]
+        : null;
+
+    return {
+      labels,
+      ordering,
+      initialLabels,
+      initialOrdering,
+      bandwidth: bw,
+      criticalEdge,
+      initialCriticalEdge,
+      initialBandwidth,
+      swaps,
+      seed: graph.getName(seedId),
+      size: n,
     };
   }
 
@@ -2537,6 +2745,155 @@ export class GraphAlgorithms {
           color: C_PERIOD,
           message: `Valid: ${result.isValid ? 'Ya' : 'Tidak'}`,
           delay: 300,
+        });
+        break;
+      }
+
+      /* --------- BANDWIDTH (BFS labelling + swap) --------- */
+      case 'bandwidth': {
+        if (graph.isEmpty) break;
+        const result = this.bandwidth(graph);
+
+        const C_DEFAULT = '#475569';
+        const C_SEED = '#facc15';
+        const C_LABEL = '#00f0ff';
+        const C_CRITICAL = '#ef4444';
+        const C_OK = '#10b981';
+        const C_SWAP = '#a855f7';
+
+        // Reset all node colors and clear labels first.
+        steps.push({
+          type: 'clear-labels',
+          message: 'Memberi label 1..n ke setiap vertex',
+          delay: 250,
+        });
+        steps.push({
+          type: 'color-node',
+          nodes: graph.nodeNames,
+          color: C_DEFAULT,
+          delay: 200,
+        });
+
+        // Phase 1: highlight seed (vertex paling sedikit tetangga).
+        if (result.seed) {
+          steps.push({
+            type: 'color-node',
+            nodes: [result.seed],
+            color: C_SEED,
+            message: `Mulai dari vertex paling sedikit tetangga: ${result.seed}`,
+            delay: 500,
+          });
+        }
+
+        // Phase 2: assign INITIAL BFS labels in BFS order, one by one.
+        for (let i = 0; i < result.initialOrdering.length; i++) {
+          const name = result.initialOrdering[i];
+          const label = result.initialLabels.get(name) ?? i + 1;
+          steps.push({
+            type: 'set-label',
+            nodes: [name],
+            labels: [label],
+            message: `Beri label ${label} ke ${name}`,
+            delay: 320,
+          });
+          steps.push({
+            type: 'color-node',
+            nodes: [name],
+            color: C_LABEL,
+            delay: 80,
+          });
+        }
+
+        // Phase 3: highlight INITIAL bandwidth-realising edge.
+        if (result.initialCriticalEdge) {
+          const [u, v] = result.initialCriticalEdge;
+          steps.push({
+            type: 'highlight-edge',
+            edges: [result.initialCriticalEdge],
+            color: C_CRITICAL,
+            message: `Selisih label terbesar = ${result.initialBandwidth} di edge ${u}–${v}. Cari penukaran yang memperbaiki.`,
+            delay: 700,
+          });
+          steps.push({
+            type: 'color-node',
+            nodes: [u, v],
+            color: C_CRITICAL,
+            delay: 200,
+          });
+        }
+
+        if (result.swaps.length === 0) {
+          steps.push({
+            type: 'color-node',
+            nodes: graph.nodeNames,
+            color: C_OK,
+            message: result.bandwidth === 0
+              ? 'Selesai. Tidak ada edge.'
+              : `Tidak ada penukaran yang memperbaiki. Bandwidth tetap ${result.bandwidth}.`,
+            delay: 500,
+          });
+          break;
+        }
+
+        // Phase 4: replay swaps. Each swap actually exchanges the badges
+        // because the canvas already shows the current label state.
+        for (let i = 0; i < result.swaps.length; i++) {
+          const sw = result.swaps[i];
+          // Reset previous critical-edge tint so the new one stands out.
+          steps.push({
+            type: 'color-node',
+            nodes: graph.nodeNames,
+            color: C_LABEL,
+            delay: 150,
+          });
+          // Highlight pair before swap
+          steps.push({
+            type: 'color-node',
+            nodes: [sw.a, sw.b],
+            color: C_SWAP,
+            message: `Tukar label ${sw.a} ↔ ${sw.b}`,
+            delay: 500,
+          });
+          // Actual swap of label values on the canvas
+          steps.push({
+            type: 'swap-labels',
+            swap: [sw.a, sw.b],
+            message: `Bandwidth turun ${sw.beforeBw} → ${sw.afterBw}`,
+            delay: 400,
+          });
+        }
+
+        // Phase 5: final critical edge using FINAL labels.
+        steps.push({
+          type: 'color-node',
+          nodes: graph.nodeNames,
+          color: C_LABEL,
+          delay: 200,
+        });
+        if (result.criticalEdge) {
+          const [u, v] = result.criticalEdge;
+          steps.push({
+            type: 'color-edge',
+            edges: [result.criticalEdge],
+            color: result.bandwidth === 0 ? C_OK : C_CRITICAL,
+            message: `Selisih label terbesar sekarang ${result.bandwidth} di edge ${u}–${v}.`,
+            delay: 500,
+          });
+          steps.push({
+            type: 'color-node',
+            nodes: [u, v],
+            color: C_CRITICAL,
+            delay: 150,
+          });
+        }
+        steps.push({
+          type: 'color-node',
+          nodes: graph.nodeNames.filter(
+            (n) => !(result.criticalEdge && (n === result.criticalEdge[0] || n === result.criticalEdge[1]))
+          ),
+          color: C_OK,
+          message: `Selesai. Bandwidth turun dari ${result.initialBandwidth} → ${result.bandwidth}.`,
+          delay: 400,
         });
         break;
       }

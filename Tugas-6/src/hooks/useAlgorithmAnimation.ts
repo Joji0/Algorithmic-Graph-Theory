@@ -9,6 +9,7 @@ export function useAlgorithmAnimation() {
   const setCurrentStepIndex = useGraphStore((s) => s.setCurrentStepIndex);
   const setAnimating = useGraphStore((s) => s.setAnimating);
   const setNodeColor = useGraphStore((s) => s.setNodeColor);
+  const setNodeLabel = useGraphStore((s) => s.setNodeLabel);
   const setEdgeColor = useGraphStore((s) => s.setEdgeColor);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,6 +52,27 @@ export function useAlgorithmAnimation() {
         }
       }
 
+      // New: numeric labels
+      if (step.type === 'set-label' && step.nodes && step.labels) {
+        for (let i = 0; i < step.nodes.length; i++) {
+          setNodeLabel(step.nodes[i], step.labels[i] ?? null);
+        }
+      }
+
+      if (step.type === 'swap-labels' && step.swap) {
+        const [a, b] = step.swap;
+        const labelsMap = useGraphStore.getState().nodeLabels;
+        const la = labelsMap[a] ?? null;
+        const lb = labelsMap[b] ?? null;
+        setNodeLabel(a, lb);
+        setNodeLabel(b, la);
+      }
+
+      if (step.type === 'clear-labels') {
+        const names = useGraphStore.getState().graph.nodeNames;
+        for (const n of names) setNodeLabel(n, null);
+      }
+
       setCurrentStepIndex(currentStepIndex + 1);
     }, delay);
 
@@ -65,6 +87,7 @@ export function useAlgorithmAnimation() {
     currentStepIndex,
     animationSpeed,
     setNodeColor,
+    setNodeLabel,
     setEdgeColor,
     setCurrentStepIndex,
     setAnimating,
